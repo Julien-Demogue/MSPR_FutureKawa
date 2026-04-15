@@ -17,5 +17,7 @@ export class ApiResponseMessages {
         return `Internal server error while processing ${entity.name}. 'Error details: ' ${error.message}`;
     }
 
-    // Add more common api response messages as needed. If the message doesn't require context view file api-response-messages.constants.ts
+    static cantRestoreExisting(entity: Function) {
+        return `Cannot restore ${entity.name} because it already exists`;
+    }
 }

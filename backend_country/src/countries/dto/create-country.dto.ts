@@ -20,5 +20,5 @@ export class CreateCountryDto {
 
     @ApiProperty()
     @IsNumber()
-    humidity_tolerance_percent!: number;
+    humidity_tolerance_percents!: number;
 }

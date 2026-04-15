@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CountriesService } from './countries.service';
 import { CreateCountryDto } from './dto/create-country.dto';
@@ -47,7 +47,7 @@ export class CountriesController {
     @ApiQuery({ name: 'id', required: true, type: Number })
     @CommonApiResponses()
     @ApiFindOneResponse(Country)
-    async findOneById(@Query('id') id: number) {
+    async findOneById(@Query('id', new ParseIntPipe()) id: number) {
         return await this.countriesService.findOneById(id);
     }
 

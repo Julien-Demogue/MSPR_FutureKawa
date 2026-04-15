@@ -8,10 +8,14 @@ export function isValidNumber(value: number | null | undefined): boolean {
     return typeof value === 'number' && !isNaN(value);
 }
 
+export function isValidPercent(value: number | null | undefined): boolean {
+    return typeof value === 'number' && !isNaN(value) && value >= 0 && value <= 100;
+}
+
 export function isValidUuid(uuid: string): boolean {
     return !isNullOrEmpty(uuid) && UUID_V4.test(uuid);
 }
 
-export function isValidId(id: number): boolean {
-    return isValidNumber(id) && id > 0;
+export function isValidId(id: number | null | undefined): boolean {
+    return typeof id === 'number' && !isNaN(id) && id > 0;
 }
