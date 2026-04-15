@@ -1,16 +1,19 @@
-import { PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, DeleteDateColumn, BaseEntity } from 'typeorm';
+import { PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, DeleteDateColumn, BaseEntity, ForeignKey, Column } from 'typeorm';
 
 export abstract class DefaultEntity extends BaseEntity {
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column({ type: 'uuid', unique: true })
     uuid!: string;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamp' })
     created_at!: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamp' })
     updated_at!: Date;
 
-    @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+    @DeleteDateColumn({ type: 'timestamp', nullable: true })
     deleted_at?: Date;
 
     @VersionColumn({ type: 'int', default: 1 })

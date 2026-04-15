@@ -8,6 +8,10 @@ export function isValidNumber(value: number | null | undefined): boolean {
     return typeof value === 'number' && !isNaN(value);
 }
 
-export function validateUuid(uuid: string): boolean {
+export function isValidUuid(uuid: string): boolean {
     return !isNullOrEmpty(uuid) && UUID_V4.test(uuid);
+}
+
+export function isValidId(id: number): boolean {
+    return isValidNumber(id) && id > 0;
 }

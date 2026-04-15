@@ -42,6 +42,15 @@ export class CountriesController {
         return await this.countriesService.findOneByUuid(uuid);
     }
 
+    @Get('/id')
+    @ApiOperation({ summary: 'Retrieve a country by ID' })
+    @ApiQuery({ name: 'id', required: true, type: Number })
+    @CommonApiResponses()
+    @ApiFindOneResponse(Country)
+    async findOneById(@Query('id') id: number) {
+        return await this.countriesService.findOneById(id);
+    }
+
     @Get('/name')
     @ApiOperation({ summary: 'Retrieve a country by name' })
     @ApiQuery({ name: 'name', required: true, type: String })

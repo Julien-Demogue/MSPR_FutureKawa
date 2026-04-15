@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Country } from './country.entity';
 import { Repository } from 'typeorm';
 import { CreateCountryDto } from './dto/create-country.dto';
-import { isNullOrEmpty, isValidNumber, validateUuid } from '../utils/fields-validation.utils';
+import { isNullOrEmpty, isValidId, isValidNumber, isValidUuid } from '../utils/fields-validation.utils';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateCountryDto } from './dto/update-country.dto';
 
@@ -52,11 +52,23 @@ export class CountriesService {
     }
 
     async findOneByUuid(uuid: string) {
-        if(isNullOrEmpty(uuid) || !validateUuid(uuid)) {
+        if(isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
         const country = await this.repo.findOneBy({ uuid });
+        if (!country) {
+            throw new BadRequestException(ApiResponseMessages.notFound(Country));
+        }
+        return country;
+    }
+
+    async findOneById(id: number) {
+        if (!isValidId(id)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('id'));
+        }
+        
+        const country = await this.repo.findOneBy({ id });
         if (!country) {
             throw new BadRequestException(ApiResponseMessages.notFound(Country));
         }
@@ -76,7 +88,7 @@ export class CountriesService {
     }
 
     async update(uuid: string, updateCountryDto: UpdateCountryDto) {
-        if(isNullOrEmpty(uuid) || !validateUuid(uuid)) {
+        if(isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
@@ -112,7 +124,7 @@ export class CountriesService {
     }
 
     async remove(uuid: string) {
-        if (!validateUuid(uuid)) {
+        if (!isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
@@ -128,7 +140,7 @@ export class CountriesService {
     }
 
     async restore(uuid: string) {
-        if(isNullOrEmpty(uuid) || !validateUuid(uuid)) {
+        if(isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
