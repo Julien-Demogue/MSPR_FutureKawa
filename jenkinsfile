@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+
+    tools {
+        // Assurez-vous que 'nodejs' est configuré dans Gérer Jenkins -> Configuration globale des outils
+        nodejs 'node'
+    }
+
+    environment {
+        SONAR_PROJECT_KEY = 'mon-projet-key'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installation des dépendances...'
+                if (isUnix()) {
+                    sh 'npm install'
+                } else {
+                    bat 'npm install'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Compilation du projet TypeScript...'
+                if (isUnix()) {
+                    sh 'npm run build'
+                } else {
+                    bat 'npm run build'
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                echo 'Exécution des tests unitaires...'
+                if (isUnix()) {
+                    sh 'npm test'
+                } else {
+                    bat 'npm test'
+                }
+            }
+            post {
+                always {
+                    // Assurez-vous d'utiliser un formateur de rapports comme jest-junit
+                    junit 'junit.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Analyse SonarQube...'
+                def scannerHome = tool 'SonarScanner' // Assurez-vous que l'outil est configuré dans Jenkins
+                withSonarQubeEnv('SonarQube') {
+                    if (isUnix()) {
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=src"
+                    } else {
+                        bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=src"
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                echo 'Vérification du Quality Gate...'
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Le pipeline a réussi !'
+        }
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
+    }
+}
