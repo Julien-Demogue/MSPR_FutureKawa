@@ -1,0 +1,26 @@
+services:
+  # frontend:
+  # backend:
+  bdd:
+    container_name: bdd_futurekawa_head_office
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: FutureKawa_Brasil
+      TZ: "Europe/Paris"
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./bdd_head_office.sql:/docker-entrypoint-initdb.d/bdd_head_office.sql
+  phpmyadmin:
+    container_name: phpmyadmin_futurekawa_head_office
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: bdd
+      PMA_USER: root
+      PMA_PASSWORD: root
+      TZ: "Europe/Paris"
+    ports:
+      - "8081:80"
+    depends_on:
+      - bdd

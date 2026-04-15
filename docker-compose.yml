@@ -1,0 +1,28 @@
+services:
+  # backend:
+  # brocker:
+  bdd:
+    container_name: bdd_futurekawa_country
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: FutureKawa_Brasil
+      TZ: "Europe/Paris"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./bdd_country.sql:/docker-entrypoint-initdb.d/bdd_country.sql
+      
+    
+  phpmyadmin:
+    container_name: phpmyadmin_futurekawa
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: bdd
+      PMA_USER: root
+      PMA_PASSWORD: root
+      TZ: "Europe/Paris"
+    ports:
+      - "8080:80"
+    depends_on:
+      - bdd
