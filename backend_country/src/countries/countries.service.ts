@@ -6,30 +6,30 @@ import { CreateCountryDto } from './dto/create-country.dto';
 import { isNullOrEmpty, isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateCountryDto } from './dto/update-country.dto';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CountriesService {
     constructor(@InjectRepository(Country) private repo: Repository<Country>) { }
 
     async create(createCountryDto: CreateCountryDto) {
-        if(isNullOrEmpty(createCountryDto.name)) {
+        if (isNullOrEmpty(createCountryDto.name)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('name'));
         }
 
-        if(!isValidNumber(createCountryDto.temperature_ideal)) {
+        if (!isValidNumber(createCountryDto.temperature_ideal)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('temperature_ideal'));
         }
 
-        if(!isValidNumber(createCountryDto.temperature_tolerance_degrees)) {
+        if (!isValidNumber(createCountryDto.temperature_tolerance_degrees)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('temperature_tolerance_degrees'));
         }
 
-        if(!isValidPercent(createCountryDto.humidity_ideal)) {
+        if (!isValidPercent(createCountryDto.humidity_ideal)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('humidity_ideal'));
         }
 
-        if(!isValidPercent(createCountryDto.humidity_tolerance_percents)) {
+        if (!isValidPercent(createCountryDto.humidity_tolerance_percents)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('humidity_tolerance_percents'));
         }
 
@@ -41,7 +41,6 @@ export class CountriesService {
 
         try {
             const uuid = uuidv4();
-            console.log(createCountryDto);
             const country = this.repo.create({ ...createCountryDto, uuid });
             return await this.repo.save(country);
         }
@@ -55,7 +54,7 @@ export class CountriesService {
     }
 
     async findOneByUuid(uuid: string) {
-        if(isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
+        if (!isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
@@ -70,7 +69,7 @@ export class CountriesService {
         if (!isValidId(id)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('id'));
         }
-        
+
         const country = await this.repo.findOneBy({ id });
         if (!country) {
             throw new BadRequestException(ApiResponseMessages.notFound(Country));
@@ -79,7 +78,7 @@ export class CountriesService {
     }
 
     async findOneByName(name: string) {
-        if(isNullOrEmpty(name)) {
+        if (isNullOrEmpty(name)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('name'));
         }
 
@@ -91,32 +90,32 @@ export class CountriesService {
     }
 
     async update(uuid: string, updateCountryDto: UpdateCountryDto) {
-        if(isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
+        if (!isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
-        if(isNullOrEmpty(updateCountryDto.name)) {
+        if (updateCountryDto.name && isNullOrEmpty(updateCountryDto.name)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('name'));
         }
 
-        if(!isValidNumber(updateCountryDto.temperature_ideal)) {
+        if (updateCountryDto.temperature_ideal && !isValidNumber(updateCountryDto.temperature_ideal)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('temperature_ideal'));
         }
 
-        if(!isValidNumber(updateCountryDto.temperature_tolerance_degrees)) {
+        if (updateCountryDto.temperature_tolerance_degrees && !isValidNumber(updateCountryDto.temperature_tolerance_degrees)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('temperature_tolerance_degrees'));
         }
 
-        if(!isValidPercent(updateCountryDto.humidity_ideal)) {
+        if (updateCountryDto.humidity_ideal && !isValidPercent(updateCountryDto.humidity_ideal)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('humidity_ideal'));
         }
 
-        if(!isValidPercent(updateCountryDto.humidity_tolerance_percents)) {
+        if (updateCountryDto.humidity_tolerance_percents && !isValidPercent(updateCountryDto.humidity_tolerance_percents)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('humidity_tolerance_percents'));
         }
 
         await this.findOneByUuid(uuid); // Ensure the country exists before updating
-        
+
         try {
             await this.repo.update({ uuid }, updateCountryDto);
             return await this.findOneByUuid(uuid);
@@ -143,12 +142,12 @@ export class CountriesService {
     }
 
     async restore(uuid: string) {
-        if(isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
+        if (!isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
         const existingCountry = await this.repo.findOneBy({ uuid });
-        if(existingCountry) {
+        if (existingCountry) {
             throw new BadRequestException(ApiResponseMessages.cantRestoreExisting(Country));
         }
 

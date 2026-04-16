@@ -1,0 +1,13 @@
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { DefaultEntity } from '../utils/default.entity';
+import { Country } from '../countries/country.entity';
+
+@Entity('farms')
+export class Farm extends DefaultEntity {
+    @Column({ type: 'varchar', length: 100 })
+    name!: string;
+
+    @ManyToOne(() => Country)
+    @JoinColumn({ name: 'id_country' })
+    country!: Country;
+}
