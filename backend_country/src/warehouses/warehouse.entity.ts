@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { DefaultEntity } from '../utils/default.entity';
 import { Farm } from '../farms/farm.entity';
 import { Batch } from '../batches/batch.entity';
+import { Statement } from '../statements/statement.entity';
 
 @Entity('warehouses')
 export class Warehouse extends DefaultEntity {
@@ -17,4 +18,7 @@ export class Warehouse extends DefaultEntity {
 
     @OneToMany(() => Batch, batch => batch.warehouse)
     batches!: Batch[];
+
+    @OneToMany(() => Statement, statement => statement.warehouse)
+    statements!: Statement[];
 }

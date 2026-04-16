@@ -12,6 +12,8 @@ import { BatchesModule } from './batches/batches.module';
 import { Batch } from './batches/batch.entity';
 import { StatusesModule } from './statuses/statuses.module';
 import { Status } from './statuses/status.entity';
+import { StatementsModule } from './statements/statements.module';
+import { Statement } from './statements/statement.entity';
 
 @Module({
   imports: [
@@ -22,14 +24,15 @@ import { Status } from './statuses/status.entity';
       username: 'root',
       password: 'root',
       database: 'FutureKawa_Brasil',
-      entities: [Country, Farm, Warehouse, Batch, Status],
+      entities: [Country, Farm, Warehouse, Batch, Status, Statement],
       synchronize: true,
     }),
     CountriesModule,
     FarmsModule,
     WarehousesModule,
     BatchesModule,
-    StatusesModule
+    StatusesModule,
+    StatementsModule
   ],
   controllers: [AppController],
   providers: [AppService],
