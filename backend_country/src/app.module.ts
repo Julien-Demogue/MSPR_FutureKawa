@@ -8,6 +8,8 @@ import { FarmsModule } from './farms/farms.module';
 import { Farm } from './farms/farm.entity';
 import { WarehousesModule } from './warehouses/warehouses.module';
 import { Warehouse } from './warehouses/warehouse.entity';
+import { BatchesModule } from './batches/batches.module';
+import { Batch } from './batches/batch.entity';
 
 @Module({
   imports: [
@@ -18,12 +20,13 @@ import { Warehouse } from './warehouses/warehouse.entity';
       username: 'root',
       password: 'root',
       database: 'FutureKawa_Brasil',
-      entities: [Country, Farm, Warehouse],
+      entities: [Country, Farm, Warehouse, Batch],
       synchronize: true,
     }),
     CountriesModule,
     FarmsModule,
-    WarehousesModule
+    WarehousesModule,
+    BatchesModule
   ],
   controllers: [AppController],
   providers: [AppService],
