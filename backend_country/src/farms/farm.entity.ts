@@ -7,6 +7,9 @@ export class Farm extends DefaultEntity {
     @Column({ type: 'varchar', length: 100 })
     name!: string;
 
+    @Column({ name: 'id_country' })
+    id_country!: number;
+
     @ManyToOne(() => Country)
     @JoinColumn({ name: 'id_country' })
     country!: Country;
