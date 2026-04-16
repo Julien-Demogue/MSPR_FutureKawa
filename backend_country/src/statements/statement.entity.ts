@@ -1,6 +1,7 @@
 import { DefaultEntity } from "../utils/default.entity";
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Warehouse } from "../warehouses/warehouse.entity";
+import { Alert } from "../alerts/alert.entity";
 
 @Entity('statements')
 export class Statement extends DefaultEntity {
@@ -16,4 +17,7 @@ export class Statement extends DefaultEntity {
     @ManyToOne(() => Warehouse)
     @JoinColumn({ name: 'id_warehouse' })
     warehouse!: Warehouse;
+
+    @OneToMany(() => Alert, alert => alert.statement)
+    alerts!: Alert[];
 }
