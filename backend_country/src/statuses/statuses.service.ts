@@ -42,6 +42,14 @@ export class StatusesService {
         return await this.repo.find();
     }
 
+    async findAllByValue(value: string) {
+        if (isNullOrEmpty(value) || !this.allowedValues.includes(value)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('value'));
+        }
+
+        return await this.repo.findBy({ value: value as Status['value'] });
+    }
+
     async findOneByUuid(uuid: string) {
         if (isNullOrEmpty(uuid) || !isValidUuid(uuid)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));

@@ -51,6 +51,15 @@ export class StatusesController {
         return await this.statusesService.findOneById(id);
     }
 
+    @Get('/value')
+    @ApiOperation({ summary: 'Retrieve statuses by value' })
+    @ApiQuery({ name: 'value', required: true, type: String })
+    @CommonApiResponses()
+    @ApiFindAllResponses(Status)
+    async findAllByValue(@Query('value') value: string) {
+        return await this.statusesService.findAllByValue(value);
+    }
+
     @Patch()
     @ApiOperation({ summary: 'Update a status by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
