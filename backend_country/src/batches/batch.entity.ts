@@ -1,6 +1,7 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { DefaultEntity } from '../utils/default.entity';
 import { Warehouse } from '../warehouses/warehouse.entity';
+import { Status } from '../statuses/status.entity';
 
 @Entity('batches')
 export class Batch extends DefaultEntity {
@@ -10,4 +11,7 @@ export class Batch extends DefaultEntity {
     @ManyToOne(() => Warehouse)
     @JoinColumn({ name: 'id_warehouse' })
     warehouse!: Warehouse;
+
+    @OneToMany(() => Status, status => status.batch)
+    statuses!: Status[];
 }
