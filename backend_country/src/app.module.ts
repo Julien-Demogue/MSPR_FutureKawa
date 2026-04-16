@@ -6,6 +6,8 @@ import { Country } from './countries/country.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FarmsModule } from './farms/farms.module';
 import { Farm } from './farms/farm.entity';
+import { WarehousesModule } from './warehouses/warehouses.module';
+import { Warehouse } from './warehouses/warehouse.entity';
 
 @Module({
   imports: [
@@ -16,11 +18,12 @@ import { Farm } from './farms/farm.entity';
       username: 'root',
       password: 'root',
       database: 'FutureKawa_Brasil',
-      entities: [Country, Farm],
+      entities: [Country, Farm, Warehouse],
       synchronize: true,
     }),
     CountriesModule,
-    FarmsModule
+    FarmsModule,
+    WarehousesModule
   ],
   controllers: [AppController],
   providers: [AppService],

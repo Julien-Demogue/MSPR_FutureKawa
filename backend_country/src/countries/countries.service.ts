@@ -98,19 +98,19 @@ export class CountriesService {
             throw new BadRequestException(ApiResponseMessages.invalidField('name'));
         }
 
-        if (updateCountryDto.temperature_ideal && !isValidNumber(updateCountryDto.temperature_ideal)) {
+        if (updateCountryDto.temperature_ideal !== undefined && !isValidNumber(updateCountryDto.temperature_ideal)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('temperature_ideal'));
         }
 
-        if (updateCountryDto.temperature_tolerance_degrees && !isValidNumber(updateCountryDto.temperature_tolerance_degrees)) {
+        if (updateCountryDto.temperature_tolerance_degrees !== undefined && !isValidNumber(updateCountryDto.temperature_tolerance_degrees)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('temperature_tolerance_degrees'));
         }
 
-        if (updateCountryDto.humidity_ideal && !isValidPercent(updateCountryDto.humidity_ideal)) {
+        if (updateCountryDto.humidity_ideal !== undefined && !isValidPercent(updateCountryDto.humidity_ideal)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('humidity_ideal'));
         }
 
-        if (updateCountryDto.humidity_tolerance_percents && !isValidPercent(updateCountryDto.humidity_tolerance_percents)) {
+        if (updateCountryDto.humidity_tolerance_percents !== undefined && !isValidPercent(updateCountryDto.humidity_tolerance_percents)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('humidity_tolerance_percents'));
         }
 

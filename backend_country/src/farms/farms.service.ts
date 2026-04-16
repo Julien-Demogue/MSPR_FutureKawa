@@ -74,7 +74,7 @@ export class FarmsService {
             throw new BadRequestException(ApiResponseMessages.invalidField('name'));
         }
 
-        if (updateFarmDto.id_country) {
+        if (updateFarmDto.id_country !== undefined) {
             if (!isValidId(updateFarmDto.id_country)) {
                 throw new BadRequestException(ApiResponseMessages.invalidField('id_country'));
             }
