@@ -5,8 +5,8 @@ import { Alert } from "../alerts/alert.entity";
 
 @Entity('statuses')
 export class Status extends DefaultEntity {
-    @Column({ type: 'enum', enum: ['OK', 'ALERT', 'EXPIRED', 'SENT'] })
-    value!: 'OK' | 'ALERT' | 'EXPIRED' | 'SENT';
+    @Column({ type: 'enum', enum: ['OK', 'ALERT', 'EXPIRED', 'SENT', 'DESTROYED'] })
+    value!: 'OK' | 'ALERT' | 'EXPIRED' | 'SENT' | 'DESTROYED';
 
     @Column({ name: 'id_batch' })
     id_batch!: number;

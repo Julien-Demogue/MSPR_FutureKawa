@@ -12,7 +12,7 @@ import { BatchesService } from '../batches/batches.service';
 @Injectable()
 export class StatusesService {
     constructor(@InjectRepository(Status) private repo: Repository<Status>, private batchesService: BatchesService,) { }
-    allowedValues = ['OK', 'ALERT', 'EXPIRED', 'SENT'];
+    allowedValues = ['OK', 'ALERT', 'EXPIRED', 'SENT', 'DESTROYED'];
 
     async create(createStatusDto: CreateStatusDto) {
         if (isNullOrEmpty(createStatusDto.value) || !this.allowedValues.includes(createStatusDto.value)) {
