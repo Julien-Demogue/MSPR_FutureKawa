@@ -20,21 +20,24 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installation des dépendances...'
-                    sh 'npm install'
+                cd backend_country
+                sh 'npm install'
             }
         }
 
         stage('Build') {
             steps {
                 echo 'Compilation du projet TypeScript...'
-                    sh 'npm run build'
+                cd backend_country
+                sh 'npm run build'
             }
         }
 
         stage('Unit Tests') {
             steps {
                 echo 'Exécution des tests unitaires...'
-                    sh 'npm test'
+                cd backend_country
+                sh 'npm test'
             }
             post {
                 always {
@@ -47,7 +50,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyse SonarQube...'
-                def scannerHome = tool 'SonarScanner' // Assurez-vous que l'outil est configuré dans Jenkins
+                def scannerHome = tool 'SonarQube Scanner' // Assurez-vous que l'outil est configuré dans Jenkins
                 withSonarQubeEnv('SonarQube') {
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=src"
                 }
