@@ -20,33 +20,21 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installation des dépendances...'
-                if (isUnix()) {
                     sh 'npm install'
-                } else {
-                    bat 'npm install'
-                }
             }
         }
 
         stage('Build') {
             steps {
                 echo 'Compilation du projet TypeScript...'
-                if (isUnix()) {
                     sh 'npm run build'
-                } else {
-                    bat 'npm run build'
-                }
             }
         }
 
         stage('Unit Tests') {
             steps {
                 echo 'Exécution des tests unitaires...'
-                if (isUnix()) {
                     sh 'npm test'
-                } else {
-                    bat 'npm test'
-                }
             }
             post {
                 always {
@@ -61,11 +49,7 @@ pipeline {
                 echo 'Analyse SonarQube...'
                 def scannerHome = tool 'SonarScanner' // Assurez-vous que l'outil est configuré dans Jenkins
                 withSonarQubeEnv('SonarQube') {
-                    if (isUnix()) {
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=src"
-                    } else {
-                        bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=src"
-                    }
                 }
             }
         }
