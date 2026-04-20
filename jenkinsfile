@@ -50,7 +50,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyse SonarQube...'
-                def scannerHome = tool 'SonarQube Scanner' // Assurez-vous que l'outil est configuré dans Jenkins
+                // def scannerHome = tool 'SonarQube Scanner' // Assurez-vous que l'outil est configuré dans Jenkins
                 withSonarQubeEnv('SonarQube') {
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.sources=src"
                 }
