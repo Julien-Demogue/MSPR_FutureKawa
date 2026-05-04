@@ -6,10 +6,6 @@ pipeline {
         nodejs 'node'
     }
 
-    environment {
-        SONAR_PROJECT_KEY = 'mon-projet-key'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -47,8 +43,9 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyse SonarQube...'
-                withSonarQubeEnv('SonarQube') {
-                        sh "sonar-scanner"
+                def scannerHome = tool 'SonarScanner';
+                withSonarQubeEnv() {
+                        sh "${scannerHome}/bin/sonar-scanner"
                 }
             }
         }
