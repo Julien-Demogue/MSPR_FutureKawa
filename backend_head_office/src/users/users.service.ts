@@ -8,6 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { isNullOrEmpty, isValidEmail, isValidId, isValidUuid } from '../utils/fields-validation.utils';
+import { hashPassword } from '../utils/security.utils';
 
 @Injectable()
 export class UsersService {
@@ -48,6 +49,7 @@ export class UsersService {
         }
 
         try {
+            createUserDto.password = await hashPassword(createUserDto.password);
             const user = this.repo.create({ ...createUserDto, uuid: uuidv4() });
             return await this.repo.save(user);
         } catch (error) {
@@ -140,6 +142,9 @@ export class UsersService {
         }
 
         try {
+            if (updateUserDto.password) {
+                updateUserDto.password = await hashPassword(updateUserDto.password);
+            }
             await this.repo.update({ uuid }, updateUserDto);
             return await this.findOneByUuid(uuid);
         } catch (error) {
