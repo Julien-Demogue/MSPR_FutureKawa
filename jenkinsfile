@@ -40,6 +40,19 @@ pipeline {
             }
         }
 
+        stage('e2e Tests') {
+            steps {
+                echo 'Exécution des tests e2e...'
+                sh 'npm run test:e2e ./backend_country'
+            }
+            post {
+                always {
+                    // Assurez-vous d'utiliser un formateur de rapports comme jest-junit
+                    junit 'e2e-junit.xml'
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyse SonarQube...'
