@@ -8,7 +8,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { isNullOrEmpty, isValidEmail, isValidId, isValidUuid } from '../utils/fields-validation.utils';
-import { hashPassword } from '../utils/security.utils';
+import { hash, compareHash } from '../utils/security.utils';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,62 @@ export class UsersService {
         @InjectRepository(User) private repo: Repository<User>,
         @InjectRepository(Role) private rolesRepo: Repository<Role>,
     ) { }
+
+    async register(createUserDto: CreateUserDto) {
+        return await this.create(createUserDto);
+    }
+
+    async login(email: string, password: string) {
+        if (isNullOrEmpty(email) || !isValidEmail(email)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('email'));
+        }
+
+        const user = await this.repo.findOne({ where: { email }, relations: { role: true } });
+        if (!user) {
+            throw new BadRequestException(ApiResponseMessages.notFound(User));
+        }
+
+        const isPasswordValid = await compareHash(password, user.password);
+        if (!isPasswordValid) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('password'));
+        }
+
+        try {
+            // Generate a new refresh token and save it to the user
+            const refreshToken = jwt.sign(
+                { sub: user.uuid, role: user.role.label },
+                process.env.JWT_REFRESH_SECRET!,
+                { expiresIn: '30d' }
+            );
+            user.refresh_token = await hash(refreshToken);
+
+            await this.repo.save(user);
+            return user;
+        }
+        catch (error) {
+            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(User, error));
+        }
+    }
+
+    async logout(uuid: string) {
+        if (!isValidUuid(uuid)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
+        }
+
+        const user = await this.repo.findOneBy({ uuid });
+        if (!user) {
+            throw new BadRequestException(ApiResponseMessages.notFound(User));
+        }
+
+        try {
+            user.refresh_token = undefined;
+            await this.repo.save(user);
+            return;
+        }
+        catch (error) {
+            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(User, error));
+        }
+    }
 
     async create(createUserDto: CreateUserDto) {
         if (isNullOrEmpty(createUserDto.email) || !isValidEmail(createUserDto.email)) {
@@ -49,7 +106,7 @@ export class UsersService {
         }
 
         try {
-            createUserDto.password = await hashPassword(createUserDto.password);
+            createUserDto.password = await hash(createUserDto.password);
             const user = this.repo.create({ ...createUserDto, uuid: uuidv4() });
             return await this.repo.save(user);
         } catch (error) {
@@ -143,7 +200,7 @@ export class UsersService {
 
         try {
             if (updateUserDto.password) {
-                updateUserDto.password = await hashPassword(updateUserDto.password);
+                updateUserDto.password = await hash(updateUserDto.password);
             }
             await this.repo.update({ uuid }, updateUserDto);
             return await this.findOneByUuid(uuid);

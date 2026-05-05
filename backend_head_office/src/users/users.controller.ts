@@ -16,6 +16,32 @@ import { User } from './user.entity';
 export class UsersController {
     constructor(private usersService: UsersService) { }
 
+    @Post('register')
+    @ApiOperation({ summary: 'Register a new user' })
+    @ApiBody({ type: CreateUserDto })
+    @CommonApiResponses()
+    @ApiCreateResponses(User)
+    async register(@Body() createUserDto: CreateUserDto) {
+        return await this.usersService.register(createUserDto);
+    }
+
+    @Get('login')
+    @ApiOperation({ summary: 'Login a user' })
+    @ApiQuery({ name: 'email', required: true, type: String })
+    @ApiQuery({ name: 'password', required: true, type: String })
+    @CommonApiResponses()
+    async login(@Query('email') email: string, @Query('password') password: string) {
+        return await this.usersService.login(email, password);
+    }
+
+    @Post('logout')
+    @ApiOperation({ summary: 'Logout a user' })
+    @ApiQuery({ name: 'uuid', required: true, type: String })
+    @CommonApiResponses()
+    async logout(@Query('uuid', new ParseUUIDPipe()) uuid: string) {
+        return await this.usersService.logout(uuid);
+    }
+
     @Post()
     @ApiOperation({ summary: 'Create a new user' })
     @ApiBody({ type: CreateUserDto })
