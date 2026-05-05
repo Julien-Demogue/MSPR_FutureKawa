@@ -17,6 +17,7 @@ pipeline {
             steps {
                 echo 'Installation des dépendances...'
                 sh 'npm install ./backend_country'
+                sh 'npm install ./backend_head_office'
             }
         }
 
@@ -24,6 +25,7 @@ pipeline {
             steps {
                 echo 'Compilation du projet TypeScript...'
                 sh 'npm run build ./backend_country'
+                sh 'npm run build ./backend_head_office'
             }
         }
 
@@ -31,6 +33,7 @@ pipeline {
             steps {
                 echo 'Exécution des tests unitaires...'
                 sh 'npm test ./backend_country'
+                sh 'npm run test ./backend_head_office'
             }
             post {
                 always {
@@ -44,6 +47,7 @@ pipeline {
             steps {
                 echo 'Exécution des tests e2e...'
                 sh 'npm run test:e2e ./backend_country'
+                sh 'npm run test:e2e ./backend_head_office'
             }
             post {
                 always {
@@ -57,7 +61,8 @@ pipeline {
             steps {
                 echo 'Analyse SonarQube...'
                 withSonarQubeEnv('SonarScanner') {
-                        sh "sonar-scanner"
+                        sh "sonar-scanner ./backend_country"
+                        sh "sonar-scanner ./backend_head_office"
                 }
             }
         }
