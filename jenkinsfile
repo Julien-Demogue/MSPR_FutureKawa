@@ -32,7 +32,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo 'Exécution des tests unitaires...'
-                sh 'npm test ./backend_country'
+                sh 'npm run test ./backend_country'
                 sh 'npm run test ./backend_head_office'
             }
             post {
