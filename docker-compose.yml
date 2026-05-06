@@ -1,7 +1,7 @@
 services:
   # backend:
   # brocker:
-  bdd:
+  bdd_country:
     container_name: bdd_futurekawa_country
     image: mysql:latest
     environment:
@@ -14,15 +14,15 @@ services:
       - ./bdd_country.sql:/docker-entrypoint-initdb.d/bdd_country.sql
       
     
-  phpmyadmin:
+  phpmyadmin_country:
     container_name: phpmyadmin_futurekawa
     image: phpmyadmin:latest
     environment:
-      PMA_HOST: bdd
+      PMA_HOST: bdd_country
       PMA_USER: root
       PMA_PASSWORD: root
       TZ: "Europe/Paris"
     ports:
       - "8080:80"
     depends_on:
-      - bdd
+      - bdd_country
