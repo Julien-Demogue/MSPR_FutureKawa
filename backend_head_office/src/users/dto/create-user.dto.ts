@@ -19,6 +19,6 @@ export class CreateUserDto {
     password!: string;
 
     @ApiPropertyOptional()
-    @IsInt()
-    id_role!: number;
+    @IsString()
+    role_label!: string;
 }

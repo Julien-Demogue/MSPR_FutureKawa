@@ -6,9 +6,16 @@ import { RolesModule } from './roles/roles.module';
 import { Role } from './roles/role.entity';
 import { UsersModule } from './users/users.module';
 import { User } from './users/user.entity';
+import { SettingsModule } from './settings/settings.module';
+import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST ?? 'localhost',
@@ -21,6 +28,8 @@ import { User } from './users/user.entity';
     }),
     RolesModule,
     UsersModule,
+    SettingsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
