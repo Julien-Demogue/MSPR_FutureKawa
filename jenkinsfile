@@ -60,7 +60,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Analyse SonarQube...'
-                withSonarQubeEnv('SonarScanner') {
+                withSonarQubeEnv('SonarQube') {
                         sh "cd ./backend_country && sonar-scanner"
                         sh "cd ./backend_head_office && sonar-scanner"
                 }
