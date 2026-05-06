@@ -6,6 +6,10 @@ pipeline {
         nodejs 'node'
     }
 
+    environment {
+        SCANNER_HOME = tool 'SonarScanner'
+        }
+
     stages {
         stage('Checkout') {
             steps {
@@ -61,8 +65,8 @@ pipeline {
             steps {
                 echo 'Analyse SonarQube...'
                 withSonarQubeEnv('SonarQube') {
-                        sh "cd ./backend_country && sonar-scanner"
-                        sh "cd ./backend_head_office && sonar-scanner"
+                        sh "cd ./backend_country && ${SCANNER_HOME}/bin/sonar-scanner"
+                        sh "cd ./backend_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
                 }
             }
         }
