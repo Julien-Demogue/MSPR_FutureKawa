@@ -38,7 +38,8 @@ pipeline {
             post {
                 always {
                     // Assurez-vous d'utiliser un formateur de rapports comme jest-junit
-                    junit 'junit.xml'
+                    junit './backend_country/junit.xml'
+                    junit './backend_head_office/junit.xml'
                 }
             }
         }
