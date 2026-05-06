@@ -19,7 +19,7 @@ export class User extends DefaultEntity {
     @Column({ type: 'varchar', length: 255, nullable: true })
     refresh_token?: string;
 
-    @Column({ type: 'timestamptz' })
+    @Column({ type: 'timestamp' })
     last_login?: Date;
 
     @Column({ name: 'id_role' })
