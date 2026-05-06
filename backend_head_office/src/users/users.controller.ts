@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -10,38 +10,19 @@ import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.d
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
 import { User } from './user.entity';
+import { Permission, PermissionGuard } from '../utils/guards/permission.guard';
+import { LoginGuard } from '../utils/guards/login.guard';
+import { Permissions } from '../utils/constants/roles-permissions.constant';
+import { JwtPayload } from '../utils/dto/jwt.dto';
+import type { Request as ExpressRequest } from 'express';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
     constructor(private usersService: UsersService) { }
 
-    @Post('register')
-    @ApiOperation({ summary: 'Register a new user' })
-    @ApiBody({ type: CreateUserDto })
-    @CommonApiResponses()
-    @ApiCreateResponses(User)
-    async register(@Body() createUserDto: CreateUserDto) {
-        return await this.usersService.register(createUserDto);
-    }
-
-    @Get('login')
-    @ApiOperation({ summary: 'Login a user' })
-    @ApiQuery({ name: 'email', required: true, type: String })
-    @ApiQuery({ name: 'password', required: true, type: String })
-    @CommonApiResponses()
-    async login(@Query('email') email: string, @Query('password') password: string) {
-        return await this.usersService.login(email, password);
-    }
-
-    @Post('logout')
-    @ApiOperation({ summary: 'Logout a user' })
-    @ApiQuery({ name: 'uuid', required: true, type: String })
-    @CommonApiResponses()
-    async logout(@Query('uuid', new ParseUUIDPipe()) uuid: string) {
-        return await this.usersService.logout(uuid);
-    }
-
+    @UseGuards(LoginGuard, PermissionGuard)
+    @Permission(Permissions.USERS_CREATE)
     @Post()
     @ApiOperation({ summary: 'Create a new user' })
     @ApiBody({ type: CreateUserDto })
@@ -51,6 +32,8 @@ export class UsersController {
         return await this.usersService.create(createUserDto);
     }
 
+    @UseGuards(LoginGuard, PermissionGuard)
+    @Permission(Permissions.USERS_READ_ALL)
     @Get()
     @ApiOperation({ summary: 'Retrieve all users' })
     @CommonApiResponses()
@@ -58,6 +41,18 @@ export class UsersController {
     async findAll() {
         return await this.usersService.findAll();
     }
+
+    @UseGuards(LoginGuard, PermissionGuard)
+    @Permission(Permissions.USERS_READ_ME)
+    @Get("/me")
+    @ApiOperation({ summary: "Retrieve user by his UUID" })
+    @ApiFindOneResponse(User)
+    @CommonApiResponses()
+    async findMe(@Req() req: ExpressRequest) {
+        const { sub } = (req as ExpressRequest & { user: JwtPayload }).user;
+        return await this.usersService.findOneByUuid(sub);
+    }
+
 
     @Get('/uuid')
     @ApiOperation({ summary: 'Retrieve a user by UUID' })
