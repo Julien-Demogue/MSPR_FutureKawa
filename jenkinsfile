@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+
+    tools {
+        // Assurez-vous que 'nodejs' est configuré dans Gérer Jenkins -> Configuration globale des outils
+        nodejs 'node'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installation des dépendances...'
+                sh 'npm install ./backend_country'
+                sh 'npm install ./backend_head_office'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Compilation du projet TypeScript...'
+                sh 'npm run build ./backend_country'
+                sh 'npm run build ./backend_head_office'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                echo 'Exécution des tests unitaires...'
+                sh 'npm run test ./backend_country'
+                sh 'npm run test ./backend_head_office'
+            }
+            post {
+                always {
+                    // Assurez-vous d'utiliser un formateur de rapports comme jest-junit
+                    junit 'junit.xml'
+                }
+            }
+        }
+
+        stage('e2e Tests') {
+            steps {
+                echo 'Exécution des tests e2e...'
+                sh 'npm run test:e2e ./backend_country'
+                sh 'npm run test:e2e ./backend_head_office'
+            }
+            post {
+                always {
+                    // Assurez-vous d'utiliser un formateur de rapports comme jest-junit
+                    junit 'e2e-junit.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Analyse SonarQube...'
+                withSonarQubeEnv('SonarScanner') {
+                        sh "sonar-scanner ./backend_country"
+                        sh "sonar-scanner ./backend_head_office"
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                echo 'Vérification du Quality Gate...'
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Le pipeline a réussi !'
+        }
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
+    }
+}

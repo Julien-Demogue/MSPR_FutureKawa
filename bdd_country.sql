@@ -1,12 +1,15 @@
-USE FutureKawa_Brasil;
-
--- Suppression des tables (ordre dépendances)
 DROP TABLE IF EXISTS alerts;
+
 DROP TABLE IF EXISTS statements;
-DROP TABLE IF EXISTS status;
+
+DROP TABLE IF EXISTS statuses;
+
 DROP TABLE IF EXISTS batches;
+
 DROP TABLE IF EXISTS warehouses;
+
 DROP TABLE IF EXISTS farms;
+
 DROP TABLE IF EXISTS countries;
 
 -- ======================
@@ -16,10 +19,10 @@ CREATE TABLE countries (
     id INT AUTO_INCREMENT PRIMARY KEY,
     uuid VARCHAR(36) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
-    temperature_ideal DECIMAL(5,2),
-    temperature_tolerance_degrees DECIMAL(5,2),
-    humidity_ideal DECIMAL(5,2),
-    humidity_tolerance_percents DECIMAL(5,2),
+    temperature_ideal DECIMAL(5, 2),
+    temperature_tolerance_degrees DECIMAL(5, 2),
+    humidity_ideal DECIMAL(5, 2),
+    humidity_tolerance_percents DECIMAL(5, 2),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL
@@ -36,11 +39,11 @@ CREATE TABLE farms (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_country) REFERENCES countries(id)
+    FOREIGN KEY (id_country) REFERENCES countries (id)
 );
 
 -- ======================
--- TABLE warehouses
+-- TABLE warehouse
 -- ======================
 CREATE TABLE warehouses (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -50,7 +53,7 @@ CREATE TABLE warehouses (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_farm) REFERENCES farms(id)
+    FOREIGN KEY (id_farm) REFERENCES farms (id)
 );
 
 -- ======================
@@ -63,21 +66,26 @@ CREATE TABLE batches (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP, -- entrée entrepôt
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_warehouse) REFERENCES warehouses(id)
+    FOREIGN KEY (id_warehouse) REFERENCES warehouses (id)
 );
 
 -- ======================
 -- TABLE status
 -- ======================
-CREATE TABLE status (
+CREATE TABLE statuses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     uuid VARCHAR(36) NOT NULL UNIQUE,
-    value ENUM('OK', 'ALERT', 'EXPIRED', 'SENT', 'DESTROYED') NOT NULL,
+    value ENUM(
+        'OK',
+        'ALERT',
+        'EXPIRED',
+        'SENT'
+    ) NOT NULL,
     id_batch INT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_batch) REFERENCES batches(id)
+    FOREIGN KEY (id_batch) REFERENCES batches (id)
 );
 
 -- ======================
@@ -86,13 +94,13 @@ CREATE TABLE status (
 CREATE TABLE statements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     uuid VARCHAR(36) NOT NULL UNIQUE,
-    temperature DECIMAL(5,2),
-    humidity DECIMAL(5,2),
+    temperature DECIMAL(5, 2),
+    humidity DECIMAL(5, 2),
     id_warehouse INT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_warehouse) REFERENCES warehouses(id)
+    FOREIGN KEY (id_warehouse) REFERENCES warehouses (id)
 );
 
 -- ======================
@@ -107,6 +115,6 @@ CREATE TABLE alerts (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_status) REFERENCES status(id),
-    FOREIGN KEY (id_statement) REFERENCES statements(id)
+    FOREIGN KEY (id_status) REFERENCES status (id),
+    FOREIGN KEY (id_statement) REFERENCES statements (id)
 );
