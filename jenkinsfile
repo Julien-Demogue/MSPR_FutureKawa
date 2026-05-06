@@ -16,24 +16,24 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installation des dépendances...'
-                sh 'npm install ./backend_country'
-                sh 'npm install ./backend_head_office'
+                sh 'cd ./backend_country && npm install'
+                sh 'cd ./backend_head_office && npm install'
             }
         }
 
         stage('Build') {
             steps {
                 echo 'Compilation du projet TypeScript...'
-                sh 'npm run build ./backend_country'
-                sh 'npm run build ./backend_head_office'
+                sh 'cd ./backend_country && npm run build'
+                sh 'cd ./backend_head_office && npm run build'
             }
         }
 
         stage('Unit Tests') {
             steps {
                 echo 'Exécution des tests unitaires...'
-                sh 'npm run test ./backend_country'
-                sh 'npm run test ./backend_head_office'
+                sh 'cd ./backend_country && npm run test'
+                sh 'cd ./backend_head_office && npm run test'
             }
             post {
                 always {
@@ -46,8 +46,8 @@ pipeline {
         stage('e2e Tests') {
             steps {
                 echo 'Exécution des tests e2e...'
-                sh 'npm run test:e2e ./backend_country'
-                sh 'npm run test:e2e ./backend_head_office'
+                sh 'cd ./backend_country && npm run test:e2e'
+                sh 'cd ./backend_head_office && npm run test:e2e'
             }
             post {
                 always {
@@ -61,8 +61,8 @@ pipeline {
             steps {
                 echo 'Analyse SonarQube...'
                 withSonarQubeEnv('SonarScanner') {
-                        sh "sonar-scanner ./backend_country"
-                        sh "sonar-scanner ./backend_head_office"
+                        sh "cd ./backend_country && sonar-scanner"
+                        sh "cd ./backend_head_office && sonar-scanner"
                 }
             }
         }
