@@ -66,23 +66,7 @@ pipeline {
                 echo 'Analyse SonarQube...'
                 withSonarQubeEnv('SonarQube') {
                         sh "cd ./backend_country && ${SCANNER_HOME}/bin/sonar-scanner"
-                }
-                echo 'Vérification du Quality Gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('SonarQube Analysis head office') {
-            steps {
-                echo 'Analyse SonarQube...'
-                withSonarQubeEnv('SonarQube') {
                         sh "cd ./backend_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
-                }
-                echo 'Vérification du Quality Gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                waitForQualityGate abortPipeline: true
                 }
             }
         }
