@@ -88,20 +88,27 @@ pipeline {
     }
 }
 
-// Fonction d'aide pour envoyer le message
 def sendDiscordNotification(String message, String color) {
     def discordWebhookUrl = "https://discord.com/api/webhooks/1501545327461662790/5-S_ltbIfaIsBmyE9FEoJ9aJENq0uiI5daXug8izxCsMJL3O5r6jgUZPPu_fck2ftQ7q"
     
-    // On utilise un "Embed" pour que ce soit plus joli (avec une barre de couleur)
-    def payload = """
-    {
+    // 1. On prépare l'objet JSON proprement
+    // On remplace les vrais retours à la ligne par le texte "\n" pour le JSON
+    def cleanMessage = message.replace("\n", "\\n").replace("\"", "\\\"")
+
+    def payload = """{
         "embeds": [{
-            "title": "Statut Pipeline Jenkins",
-            "description": "${message}",
+            "title": "Statut Pipeline",
+            "description": "${cleanMessage}",
             "color": ${color}
         }]
-    }
-    """
+    }"""
+
+    // 2. On écrit le payload dans un fichier temporaire
+    writeFile file: 'discord_payload.json', text: payload
+
+    // 3. On envoie le fichier avec @
+    sh "curl -H 'Content-Type: application/json' -X POST -d @discord_payload.json ${discordWebhookUrl}"
     
-    sh "curl -H 'Content-Type: application/json' -X POST -d '${payload}' ${discordWebhookUrl}"
+    // 4. Nettoyage
+    sh "rm discord_payload.json"
 }
