@@ -74,10 +74,34 @@ pipeline {
 
     post {
         success {
-            echo 'Le pipeline a réussi !'
+            script {
+                def message = "✅ **Build Réussi !**\n**Projet :** ${env.JOB_NAME}\n**Build :** #${env.BUILD_NUMBER}\n**Lien :** ${env.BUILD_URL}"
+                sendDiscordNotification(message, "65280") // Vert
+            }
         }
         failure {
-            echo 'Le pipeline a échoué.'
+            script {
+                def message = "❌ **Build Échoué...**\n**Projet :** ${env.JOB_NAME}\n**Build :** #${env.BUILD_NUMBER}\n**Lien :** ${env.BUILD_URL}"
+                sendDiscordNotification(message, "16711680") // Rouge
+            }
         }
     }
+}
+
+// Fonction d'aide pour envoyer le message
+def sendDiscordNotification(String message, String color) {
+    def discordWebhookUrl = "https://discord.com/api/webhooks/1501545327461662790/5-S_ltbIfaIsBmyE9FEoJ9aJENq0uiI5daXug8izxCsMJL3O5r6jgUZPPu_fck2ftQ7q"
+    
+    // On utilise un "Embed" pour que ce soit plus joli (avec une barre de couleur)
+    def payload = """
+    {
+        "embeds": [{
+            "title": "Statut Pipeline Jenkins",
+            "description": "${message}",
+            "color": ${color}
+        }]
+    }
+    """
+    
+    sh "curl -H 'Content-Type: application/json' -X POST -d '${payload}' ${discordWebhookUrl}"
 }
