@@ -1,6 +1,16 @@
 services:
   # frontend:
-  # backend:
+  backend:
+    container_name: backend_futurekawa_head_office
+    build:
+      context: ./backend_head_office
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm run start"
+    ports:
+      - "3001:3000"
+    depends_on:
+      - bdd_head_office
   bdd_head_office:
     container_name: bdd_futurekawa_head_office
     image: mysql:latest
