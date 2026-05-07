@@ -1,5 +1,5 @@
 services:
-  backend:
+  backend_country:
     container_name: backend_futurekawa_country
     build:
       context: ./backend_country
