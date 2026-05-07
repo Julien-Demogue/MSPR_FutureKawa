@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from "@nestjs/config";
 import { AuthService } from './auth.service';
 import type {
@@ -24,18 +24,26 @@ export class AuthController {
     private readonly config: ConfigService
   ) { }
 
-  @ApiOkResponse({ type: String })
   @Public()
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 409, description: 'Conflict' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async registerRegular(
     @Body() body: RegisterDto,
   ): Promise<void> {
     await this.authService.registerRegular(body);
   }
 
-  @ApiOkResponse({ type: User })
   @Public()
   @Post('login')
+  @ApiOperation({ summary: 'Login a user' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 201, description: 'User logged in successfully' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: ExpressResponse,
@@ -66,6 +74,10 @@ export class AuthController {
   @ApiOkResponse({ type: String })
   @UseGuards(AuthGuard("jwt"))
   @Post('logout')
+  @ApiOperation({ summary: 'Logout a user' })
+  @ApiResponse({ status: 201, description: 'User logged out successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async logout(
     @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: ExpressResponse,
@@ -88,9 +100,12 @@ export class AuthController {
     }
   }
 
-
   @Public()
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh authentication tokens' })
+  @ApiResponse({ status: 201, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async refresh(
     @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: ExpressResponse,

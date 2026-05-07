@@ -69,6 +69,7 @@ export class RolesService {
         }
 
         const role = await this.repo.findOneBy({ label });
+        console.log('Finding role with label:', label, 'Found:', role);
         if (!role) {
             throw new BadRequestException(ApiResponseMessages.notFound(Role));
         }

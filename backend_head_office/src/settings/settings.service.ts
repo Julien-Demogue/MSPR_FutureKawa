@@ -10,7 +10,7 @@ export class SettingsService {
   // URL settings
   readonly BASE_URL: string;
   readonly FRONT_URL: string;
-  readonly GLOBAL_PREFIX = 'futurekawaapi';
+  readonly GLOBAL_PREFIX = '';
 
   // Cookie settings
   readonly DEFAULT_COOKIE_OPTIONS: CookieOptions;

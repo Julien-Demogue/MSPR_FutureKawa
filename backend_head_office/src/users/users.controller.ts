@@ -10,19 +10,17 @@ import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.d
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
 import { User } from './user.entity';
-import { Roles, RoleGuard } from '../utils/guards/role.guard';
-import { LoginGuard } from '../utils/guards/login.guard';
 import { AppRole } from '../utils/constants/roles.constant';
 import { JwtPayload } from '../utils/dto/jwt.dto';
 import type { Request as ExpressRequest } from 'express';
+import { Guard } from '../utils/decorators/duard.decorator';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
     constructor(private usersService: UsersService) { }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN, AppRole.ADMIN)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Post()
     @ApiOperation({ summary: 'Create a new user' })
     @ApiBody({ type: CreateUserDto })
@@ -32,8 +30,7 @@ export class UsersController {
         return await this.usersService.create(createUserDto);
     }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN, AppRole.ADMIN)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get()
     @ApiOperation({ summary: 'Retrieve all users' })
     @CommonApiResponses()
@@ -42,7 +39,7 @@ export class UsersController {
         return await this.usersService.findAll();
     }
 
-    @UseGuards(LoginGuard)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN, AppRole.USER)
     @Get("/me")
     @ApiOperation({ summary: "Retrieve user by his UUID" })
     @ApiFindOneResponse(User)
@@ -52,9 +49,7 @@ export class UsersController {
         return await this.usersService.findOneByUuid(sub);
     }
 
-
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN, AppRole.ADMIN)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get('/uuid')
     @ApiOperation({ summary: 'Retrieve a user by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
@@ -64,8 +59,7 @@ export class UsersController {
         return await this.usersService.findOneByUuid(uuid);
     }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN, AppRole.ADMIN)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get('/id')
     @ApiOperation({ summary: 'Retrieve a user by ID' })
     @ApiQuery({ name: 'id', required: true, type: Number })
@@ -75,8 +69,7 @@ export class UsersController {
         return await this.usersService.findOneById(id);
     }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN, AppRole.ADMIN)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get('/email')
     @ApiOperation({ summary: 'Retrieve a user by email' })
     @ApiQuery({ name: 'email', required: true, type: String })
@@ -86,8 +79,7 @@ export class UsersController {
         return await this.usersService.findOneByEmail(email);
     }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN, AppRole.ADMIN)
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Patch()
     @ApiOperation({ summary: 'Update a user by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
@@ -101,8 +93,7 @@ export class UsersController {
         return await this.usersService.update(uuid, updateUserDto);
     }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN)
+    @Guard(AppRole.SUPERADMIN)
     @Delete()
     @ApiOperation({ summary: 'Delete a user by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
@@ -112,8 +103,7 @@ export class UsersController {
         return await this.usersService.remove(uuid);
     }
 
-    @UseGuards(LoginGuard, RoleGuard)
-    @Roles(AppRole.SUPERADMIN)
+    @Guard(AppRole.SUPERADMIN)
     @Patch('/restore')
     @ApiOperation({ summary: 'Restore a deleted user by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })

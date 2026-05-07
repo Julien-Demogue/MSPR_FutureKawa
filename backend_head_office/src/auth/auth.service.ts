@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { compare } from "bcrypt";
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
@@ -6,6 +6,11 @@ import { UsersService } from '../users/users.service';
 import { SettingsService } from '../settings/settings.service';
 import { User } from '../users/user.entity';
 import { JwtPayload, JwtTokenDto } from '../utils/dto/jwt.dto';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { isNullOrEmpty, isValidEmail } from '../utils/fields-validation.utils';
+import { ApiResponseMessages } from '../utils/api-response-messages.utils';
+import { AppRole } from '../utils/constants/roles.constant';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +25,7 @@ export class AuthService {
     private readonly settings: SettingsService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    @InjectRepository(User) private userRepo: Repository<User>,
   ) {
     this.jwtSecret = this.settings.JWT_SECRET;
     this.accessTokenExp = this.settings.ACCESS_TOKEN_EXPIRY;
@@ -36,15 +42,24 @@ export class AuthService {
  * @returns void
  */
   async registerRegular(params: RegisterDto): Promise<void> {
-    const existingUser = await this.usersService.findOneByEmail(params.email.toLowerCase());
-    if (existingUser) { throw new ConflictException('EmailAlreadyExistsError') }
+    if (isNullOrEmpty(params.email) || isNullOrEmpty(params.password)) {
+      throw new BadRequestException('Email and password are required');
+    }
+
+    if (!isValidEmail(params.email)) {
+      throw new BadRequestException(ApiResponseMessages.invalidField('email'));
+    }
+
+    // User email should be unique
+    const existingUser = await this.userRepo.findOne({ where: { email: params.email.toLowerCase() }, relations: { role: true } });
+    if (existingUser) {
+      throw new ConflictException('EmailAlreadyExistsError')
+    }
 
     await this.usersService.create({
-      first_name: params.first_name,
-      last_name: params.last_name,
       email: params.email.toLowerCase(),
       password: params.password,
-      role_label: 'regular',
+      role_label: AppRole.USER,
     });
   }
 

@@ -1,10 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.FRONT_URL ?? 'http://localhost:5000',
+    credentials: true
+  });
+  app.use(cookieParser());
 
   const config = new DocumentBuilder()
     .setTitle('FutureKawa - Backend Head Office')

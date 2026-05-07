@@ -9,12 +9,13 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { isNullOrEmpty, isValidEmail, isValidId, isValidUuid } from '../utils/fields-validation.utils';
 import bcrypt from 'bcrypt';
+import { RolesService } from '../roles/roles.service';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User) private repo: Repository<User>,
-        @InjectRepository(Role) private rolesRepo: Repository<Role>,
+        private readonly rolesService: RolesService,
     ) { }
 
     async create(createUserDto: CreateUserDto) {
@@ -26,19 +27,11 @@ export class UsersService {
             throw new BadRequestException(ApiResponseMessages.invalidField('password'));
         }
 
-        if (isNullOrEmpty(createUserDto.first_name)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('first_name'));
-        }
-
-        if (isNullOrEmpty(createUserDto.last_name)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('last_name'));
-        }
-
         if (isNullOrEmpty(createUserDto.role_label)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('role_label'));
         }
 
-        const role = await this.rolesRepo.findOneBy({ label: createUserDto.role_label });
+        const role = await this.rolesService.findOneByLabel(createUserDto.role_label);
         if (!role) {
             throw new BadRequestException(ApiResponseMessages.notFound(Role));
         }
@@ -50,7 +43,7 @@ export class UsersService {
 
         try {
             createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
-            const user = this.repo.create({ ...createUserDto, uuid: uuidv4() });
+            const user = this.repo.create({ ...createUserDto, uuid: uuidv4(), role, id_role: role.id });
             return await this.repo.save(user);
         } catch (error) {
             throw new InternalServerErrorException(ApiResponseMessages.internalServerError(User, error));
@@ -126,7 +119,7 @@ export class UsersService {
                 throw new BadRequestException(ApiResponseMessages.invalidField('role_label'));
             }
 
-            const role = await this.rolesRepo.findOneBy({ label: updateUserDto.role_label });
+            const role = await this.rolesService.findOneByLabel(updateUserDto.role_label);
             if (!role) {
                 throw new BadRequestException(ApiResponseMessages.notFound(Role));
             }

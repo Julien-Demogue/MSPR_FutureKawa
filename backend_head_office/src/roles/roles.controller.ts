@@ -10,12 +10,15 @@ import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.d
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
 import { Role } from './role.entity';
+import { Guard } from '../utils/decorators/duard.decorator';
+import { AppRole } from '../utils/constants/roles.constant';
 
 @ApiTags('roles')
 @Controller('roles')
 export class RolesController {
     constructor(private rolesService: RolesService) { }
 
+    @Guard(AppRole.SUPERADMIN)
     @Post()
     @ApiOperation({ summary: 'Create a new role' })
     @ApiBody({ type: CreateRoleDto })
@@ -25,6 +28,7 @@ export class RolesController {
         return await this.rolesService.create(createRoleDto);
     }
 
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get()
     @ApiOperation({ summary: 'Retrieve all roles' })
     @CommonApiResponses()
@@ -33,6 +37,7 @@ export class RolesController {
         return await this.rolesService.findAll();
     }
 
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get('/uuid')
     @ApiOperation({ summary: 'Retrieve a role by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
@@ -42,6 +47,7 @@ export class RolesController {
         return await this.rolesService.findOneByUuid(uuid);
     }
 
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get('/id')
     @ApiOperation({ summary: 'Retrieve a role by ID' })
     @ApiQuery({ name: 'id', required: true, type: Number })
@@ -51,6 +57,7 @@ export class RolesController {
         return await this.rolesService.findOneById(id);
     }
 
+    @Guard(AppRole.SUPERADMIN, AppRole.ADMIN)
     @Get('/label')
     @ApiOperation({ summary: 'Retrieve a role by label' })
     @ApiQuery({ name: 'label', required: true, type: String })
@@ -60,6 +67,7 @@ export class RolesController {
         return await this.rolesService.findOneByLabel(label);
     }
 
+    @Guard(AppRole.SUPERADMIN)
     @Patch()
     @ApiOperation({ summary: 'Update a role by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
@@ -73,6 +81,7 @@ export class RolesController {
         return await this.rolesService.update(uuid, updateRoleDto);
     }
 
+    @Guard(AppRole.SUPERADMIN)
     @Delete()
     @ApiOperation({ summary: 'Delete a role by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
@@ -82,6 +91,7 @@ export class RolesController {
         return await this.rolesService.remove(uuid);
     }
 
+    @Guard(AppRole.SUPERADMIN)
     @Patch('/restore')
     @ApiOperation({ summary: 'Restore a deleted role by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })
