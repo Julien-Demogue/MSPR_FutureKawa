@@ -71,7 +71,6 @@ export class AuthController {
     return response;
   }
 
-  @ApiOkResponse({ type: String })
   @UseGuards(AuthGuard("jwt"))
   @Post('logout')
   @ApiOperation({ summary: 'Logout a user' })

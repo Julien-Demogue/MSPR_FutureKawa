@@ -13,7 +13,7 @@ import { User } from './user.entity';
 import { AppRole } from '../utils/constants/roles.constant';
 import { JwtPayload } from '../utils/dto/jwt.dto';
 import type { Request as ExpressRequest } from 'express';
-import { Guard } from '../utils/decorators/duard.decorator';
+import { Guard } from '../utils/decorators/guard.decorator';
 
 @ApiTags('users')
 @Controller('users')

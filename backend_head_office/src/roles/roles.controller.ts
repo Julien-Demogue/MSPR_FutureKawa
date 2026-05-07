@@ -10,7 +10,7 @@ import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.d
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
 import { Role } from './role.entity';
-import { Guard } from '../utils/decorators/duard.decorator';
+import { Guard } from '../utils/decorators/guard.decorator';
 import { AppRole } from '../utils/constants/roles.constant';
 
 @ApiTags('roles')
