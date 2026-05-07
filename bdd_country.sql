@@ -43,7 +43,7 @@ CREATE TABLE farms (
 );
 
 -- ======================
--- TABLE warehouse
+-- TABLE warehouses
 -- ======================
 CREATE TABLE warehouses (
     id INT AUTO_INCREMENT PRIMARY KEY,
