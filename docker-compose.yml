@@ -1,6 +1,15 @@
 services:
-  # backend:
-  # brocker:
+  backend:
+    container_name: backend_futurekawa_country
+    build:
+      context: ./backend_country
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm run start"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bdd_country
   bdd_country:
     container_name: bdd_futurekawa_country
     image: mysql:latest
@@ -12,7 +21,6 @@ services:
       - "3306:3306"
     volumes:
       - ./bdd_country.sql:/docker-entrypoint-initdb.d/bdd_country.sql
-      
     
   phpmyadmin_country:
     container_name: phpmyadmin_futurekawa
