@@ -15,6 +15,12 @@ CREATE TABLE roles (
     deleted_at DATETIME NULL
 );
 
+INSERT INTO
+    roles (uuid, label)
+VALUES (UUID(), 'SUPERADMIN'),
+    (UUID(), 'ADMIN'),
+    (UUID(), 'USER');
+
 -- ======================
 -- TABLE users
 -- ======================

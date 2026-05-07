@@ -4,5 +4,5 @@
 export enum AppRole {
     SUPERADMIN = 'SUPERADMIN',
     ADMIN = 'ADMIN',
-    REGULAR = 'REGULAR',
+    USER = 'USER',
 }
