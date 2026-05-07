@@ -7,6 +7,8 @@ import { RolesController } from './../src/roles/roles.controller';
 import { RolesService } from './../src/roles/roles.service';
 import { UsersController } from './../src/users/users.controller';
 import { UsersService } from './../src/users/users.service';
+import { LoginGuard } from './../src/utils/guards/login.guard';
+import { RoleGuard } from './../src/utils/guards/role.guard';
 
 jest.mock('uuid', () => ({
     v4: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
@@ -92,6 +94,10 @@ export const createE2eTestingApp = async () => {
     };
     const serviceMocks = createServiceMocks();
 
+    const allowGuard = {
+        canActivate: jest.fn(() => true),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
         controllers: [AppController, RolesController, UsersController],
         providers: [
@@ -99,7 +105,12 @@ export const createE2eTestingApp = async () => {
             { provide: RolesService, useValue: serviceMocks.roles },
             { provide: UsersService, useValue: serviceMocks.users },
         ],
-    }).compile();
+    })
+        .overrideGuard(LoginGuard)
+        .useValue(allowGuard)
+        .overrideGuard(RoleGuard)
+        .useValue(allowGuard)
+        .compile();
 
     const app = moduleFixture.createNestApplication();
     await app.init();

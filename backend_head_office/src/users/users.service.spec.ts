@@ -3,7 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
-import { Role } from '../roles/role.entity';
+import { RolesService } from '../roles/roles.service';
+import bcrypt from 'bcrypt';
 
 jest.mock('uuid', () => ({
     v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
@@ -23,8 +24,8 @@ describe('UsersService', () => {
         softDelete: jest.fn(),
         restore: jest.fn(),
     };
-    const rolesRepoMock = {
-        findOneBy: jest.fn(),
+    const rolesServiceMock = {
+        findOneByLabel: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -36,8 +37,8 @@ describe('UsersService', () => {
                     useValue: repoMock,
                 },
                 {
-                    provide: getRepositoryToken(Role),
-                    useValue: rolesRepoMock,
+                    provide: RolesService,
+                    useValue: rolesServiceMock,
                 },
             ],
         }).compile();
@@ -65,14 +66,14 @@ describe('UsersService', () => {
 
     it('should create a user when payload is valid', async () => {
         const payload = {
-            first_name: 'John',
-            last_name: 'Doe',
             email: 'john.doe@example.com',
             password: 'secret123',
-            id_role: 1,
+            role_label: 'Admin',
         };
 
-        rolesRepoMock.findOneBy.mockResolvedValue({ id: 1, label: 'Admin' });
+        jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-password' as never);
+
+        rolesServiceMock.findOneByLabel.mockResolvedValue({ id: 1, label: 'Admin' });
         repoMock.findOneBy.mockResolvedValue(null);
         repoMock.create.mockImplementation((value) => value);
         repoMock.save.mockImplementation(async (value) => ({ id: 1, ...value }));
@@ -81,17 +82,20 @@ describe('UsersService', () => {
 
         expect(result.id).toBe(1);
         expect(result.uuid).toBeDefined();
-        expect(repoMock.create).toHaveBeenCalledWith({ ...payload, uuid: validUuid });
+        expect(repoMock.create).toHaveBeenCalledWith({
+            ...payload,
+            uuid: validUuid,
+            role: { id: 1, label: 'Admin' },
+            id_role: 1,
+        });
     });
 
     it('should throw for invalid email on create', async () => {
         await expect(
             service.create({
-                first_name: 'John',
-                last_name: 'Doe',
                 email: 'bad-email',
                 password: 'secret123',
-                id_role: 1,
+                role_label: 'Admin',
             }),
         ).rejects.toBeInstanceOf(BadRequestException);
     });
@@ -99,94 +103,60 @@ describe('UsersService', () => {
     it('should throw for invalid password on create', async () => {
         await expect(
             service.create({
-                first_name: 'John',
-                last_name: 'Doe',
                 email: 'john.doe@example.com',
                 password: '',
-                id_role: 1,
+                role_label: 'Admin',
             }),
         ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('should throw for invalid first name on create', async () => {
+    it('should throw for invalid role_label on create', async () => {
         await expect(
             service.create({
-                first_name: '',
-                last_name: 'Doe',
                 email: 'john.doe@example.com',
                 password: 'secret123',
-                id_role: 1,
+                role_label: '',
             }),
         ).rejects.toBeInstanceOf(BadRequestException);
-    });
-
-    it('should throw for invalid last name on create', async () => {
-        await expect(
-            service.create({
-                first_name: 'John',
-                last_name: '',
-                email: 'john.doe@example.com',
-                password: 'secret123',
-                id_role: 1,
-            }),
-        ).rejects.toBeInstanceOf(BadRequestException);
-    });
-
-    it('should throw for invalid id_role on create', async () => {
-        await expect(
-            service.create({
-                first_name: 'John',
-                last_name: 'Doe',
-                email: 'john.doe@example.com',
-                password: 'secret123',
-                id_role: 0,
-            }),
-        ).rejects.toBeInstanceOf(BadRequestException);
-        expect(rolesRepoMock.findOneBy).not.toHaveBeenCalled();
+        expect(rolesServiceMock.findOneByLabel).not.toHaveBeenCalled();
     });
 
     it('should throw when related role is not found on create', async () => {
-        rolesRepoMock.findOneBy.mockResolvedValue(null);
+        rolesServiceMock.findOneByLabel.mockResolvedValue(null);
 
         await expect(
             service.create({
-                first_name: 'John',
-                last_name: 'Doe',
                 email: 'john.doe@example.com',
                 password: 'secret123',
-                id_role: 1,
+                role_label: 'Admin',
             }),
         ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('should throw for duplicate email on create', async () => {
-        rolesRepoMock.findOneBy.mockResolvedValue({ id: 1, label: 'Admin' });
+        rolesServiceMock.findOneByLabel.mockResolvedValue({ id: 1, label: 'Admin' });
         repoMock.findOneBy.mockResolvedValue({ id: 2, uuid: 'other-uuid', email: 'john.doe@example.com' });
 
         await expect(
             service.create({
-                first_name: 'John',
-                last_name: 'Doe',
                 email: 'john.doe@example.com',
                 password: 'secret123',
-                id_role: 1,
+                role_label: 'Admin',
             }),
         ).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('should wrap repository save errors on create', async () => {
-        rolesRepoMock.findOneBy.mockResolvedValue({ id: 1, label: 'Admin' });
+        rolesServiceMock.findOneByLabel.mockResolvedValue({ id: 1, label: 'Admin' });
         repoMock.findOneBy.mockResolvedValue(null);
         repoMock.create.mockImplementation((value) => value);
         repoMock.save.mockRejectedValue(new Error('db-error'));
 
         await expect(
             service.create({
-                first_name: 'John',
-                last_name: 'Doe',
                 email: 'john.doe@example.com',
                 password: 'secret123',
-                id_role: 1,
+                role_label: 'Admin',
             }),
         ).rejects.toBeInstanceOf(InternalServerErrorException);
     });
@@ -266,14 +236,14 @@ describe('UsersService', () => {
         await expect(service.update(validUuid, { last_name: '' })).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('should throw for invalid id_role on update', async () => {
-        await expect(service.update(validUuid, { id_role: 0 })).rejects.toBeInstanceOf(BadRequestException);
+    it('should throw for invalid role_label on update', async () => {
+        await expect(service.update(validUuid, { role_label: '' })).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('should throw when related role is not found on update', async () => {
-        rolesRepoMock.findOneBy.mockResolvedValue(null);
+        rolesServiceMock.findOneByLabel.mockResolvedValue(null);
 
-        await expect(service.update(validUuid, { id_role: 2 })).rejects.toBeInstanceOf(BadRequestException);
+        await expect(service.update(validUuid, { role_label: 'Manager' })).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('should throw for duplicate email on update', async () => {
