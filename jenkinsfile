@@ -30,6 +30,8 @@ pipeline {
                 echo 'Compilation du projet TypeScript...'
                 sh 'cd ./backend_country && npm run build'
                 sh 'cd ./backend_head_office && npm run build'
+                sh 'tar -czvf backend_country.tar.gz -C ./backend_country dist'
+                sh 'tar -czvf backend_head_office.tar.gz -C ./backend_head_office dist'
             }
         }
 
@@ -69,6 +71,14 @@ pipeline {
                         sh "cd ./backend_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
                 }
             }
+        }
+        stage('Deploy'){
+            steps {
+                echo 'Déploiement...'
+                withCredentials([usernamePassword(credentialsId: 'nexus-credentials-id', passwordVariable: 'NEXUS_PWD', usernameVariable: 'NEXUS_USR')]){
+                sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./backend_head_office.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_head_office/backend_head_office.tar.gz"'
+                sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./backend_country.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_country/backend_country.tar.gz"'
+            }}
         }
     }
 
