@@ -1,4 +1,5 @@
 import { headOfficeApi } from "./axios.config";
+import { useIntl } from 'react-intl';
 
 
 function App() {
@@ -38,24 +39,29 @@ function App() {
     }
   }
 
-  return (
-    <div className="flex">
-      <p>Email : rico@bref.fr</p>
-      <p>Mot de passe : P@ssword35</p>
+  const intl = useIntl();
+  const date = new Date();
 
-      <button onClick={handleRegister}>
+  return (
+    <div>
+      {intl.formatMessage({ id: "app_title" })}
+      {intl.formatDate(date)}
+      <p>Email de test: rico@bref.fr</p>
+      <p>Mot de passe de test: P@ssword35</p>
+    
+      <button className="hover:cursor-pointer hover:bg-purple-700 font-bold bg-purple-500 rounded text-white p-1 mr-2" onClick={handleRegister}>
         register_button
       </button>
 
-      <button onClick={handleLogin}>
+      <button className="hover:cursor-pointer hover:bg-purple-700 font-bold bg-purple-500 rounded text-white p-1 mr-2" onClick={handleLogin}>
         login_button
       </button>
 
-      <button onClick={getUser}>
+      <button className="hover:cursor-pointer hover:bg-purple-700 font-bold bg-purple-500 rounded text-white p-1 mr-2" onClick={getUser}>
         getUser_button
       </button>
 
-      <button onClick={handleLogout}>
+      <button className="hover:cursor-pointer hover:bg-purple-700 font-bold bg-purple-500 rounded text-white p-1 mr-2" onClick={handleLogout}>
         logout_button
       </button>
     </div>
