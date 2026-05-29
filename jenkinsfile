@@ -75,6 +75,8 @@ pipeline {
         stage('Deploy'){
             steps {
                 echo 'Déploiement...'
+                sh 'ls -la ./backend_head_office'
+                sh 'ls -la ./backend_country'
                 sh 'curl -v -u "cd:testtest" --upload-file ./backend_head_office/backend_head_office.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_head_office/backend_head_office.tar.gz"'
                 sh 'curl -v -u "cd:testtest" --upload-file ./backend_country/backend_country.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_country/backend_country.tar.gz"'
             }
