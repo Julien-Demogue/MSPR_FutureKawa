@@ -16,9 +16,14 @@ import { StatementsModule } from './statements/statements.module';
 import { Statement } from './statements/statement.entity';
 import { AlertsModule } from './alerts/alerts.module';
 import { Alert } from './alerts/alert.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST ?? 'localhost',

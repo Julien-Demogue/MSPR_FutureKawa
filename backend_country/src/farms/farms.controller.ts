@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FarmsService } from './farms.service';
 import { CreateFarmDto } from './dto/create-farm.dto';
@@ -10,8 +10,10 @@ import { ApiFindAllResponses } from '../utils/decorators/api-find-all-response.d
 import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.decorator';
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
+import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('farms')
+@UseGuards(ServiceAuthGuard)
 @Controller('farms')
 export class FarmsController {
     constructor(private farmsService: FarmsService) { }

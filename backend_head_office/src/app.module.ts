@@ -9,6 +9,7 @@ import { User } from './users/user.entity';
 import { SettingsModule } from './settings/settings.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { BackendCountryModule } from './backend-country/backend-country.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ConfigModule } from '@nestjs/config';
     UsersModule,
     SettingsModule,
     AuthModule,
+    BackendCountryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
