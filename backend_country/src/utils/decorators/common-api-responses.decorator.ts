@@ -1,7 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 
-// Use this for common error responses (not success)
 export function CommonApiResponses() {
     return applyDecorators(
         ApiResponse({ status: 400, description: 'Invalid parameters.' }),

@@ -1,4 +1,3 @@
-// Here we define methods to get common api response messages including context that can be applied in severals services.
 export class ApiResponseMessages {
     static notFound(entity: Function) {
         return `${entity.name} not found`;
