@@ -30,8 +30,8 @@ pipeline {
                 echo 'Compilation du projet TypeScript...'
                 sh 'cd ./backend_country && npm run build'
                 sh 'cd ./backend_head_office && npm run build'
-                sh 'tar -czf backend_country.tar.gz -C ./backend_country dist'
-                sh 'tar -czf backend_head_office.tar.gz -C ./backend_head_office dist'
+                sh 'tar -czvf backend_country.tar.gz -C ./backend_country dist'
+                sh 'tar -czvf backend_head_office.tar.gz -C ./backend_head_office dist'
             }
         }
 
