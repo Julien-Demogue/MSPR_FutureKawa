@@ -6,21 +6,21 @@ import { warehouse_url, default_headers } from '../utils/constants/backend-count
 
 @Controller("backend_country/warehouses")
 export class BackendCountryWarehousesController {
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get()
     async getWarehouses(@Res() res) {
         const url = `${warehouse_url}`;
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Post()
     async createWarehouse(@Req() req, @Res() res) {
         const url = `${warehouse_url}`;
         const response = await axios.post(url, req.body, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get('uuid')
     async getWarehouseByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -28,7 +28,7 @@ export class BackendCountryWarehousesController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get('id')
     async getWarehouseById(@Req() req, @Res() res) {
         const id = req.query.id;
@@ -36,7 +36,7 @@ export class BackendCountryWarehousesController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch()
     async updateWarehouse(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -44,7 +44,7 @@ export class BackendCountryWarehousesController {
         const response = await axios.patch(url, req.body, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Delete()
     async deleteWarehouse(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -52,7 +52,7 @@ export class BackendCountryWarehousesController {
         const response = await axios.delete(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch('restore')
     async restoreWarehouse(@Req() req, @Res() res) {
         const uuid = req.query.uuid;

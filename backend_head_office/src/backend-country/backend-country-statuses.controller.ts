@@ -6,21 +6,21 @@ import { status_url, default_headers } from '../utils/constants/backend-country.
 
 @Controller("backend_country/statuses")
 export class BackendCountryStatusesController {
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get()
     async getStatuses(@Res() res) {
         const url = `${status_url}`;
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Post()
     async createStatus(@Req() req, @Res() res) {
         const url = `${status_url}`;
         const response = await axios.post(url, req.body, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get('uuid')
     async getStatusByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -28,7 +28,7 @@ export class BackendCountryStatusesController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get('id')
     async getStatusById(@Req() req, @Res() res) {
         const id = req.query.id;
@@ -36,7 +36,7 @@ export class BackendCountryStatusesController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Get('value')
     async getStatusesByValue(@Req() req, @Res() res) {
         const value = req.query.value;
@@ -44,7 +44,7 @@ export class BackendCountryStatusesController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch()
     async updateStatus(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -52,7 +52,7 @@ export class BackendCountryStatusesController {
         const response = await axios.patch(url, req.body, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Delete()
     async deleteStatus(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -60,7 +60,7 @@ export class BackendCountryStatusesController {
         const response = await axios.delete(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER)
+    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch('restore')
     async restoreStatus(@Req() req, @Res() res) {
         const uuid = req.query.uuid;

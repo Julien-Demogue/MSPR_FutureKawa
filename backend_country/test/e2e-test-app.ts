@@ -1,6 +1,7 @@
 import { BadRequestException, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import type { Test as SupertestTest } from 'supertest';
 import { AlertsController } from './../src/alerts/alerts.controller';
 import { AlertsService } from './../src/alerts/alerts.service';
 import { AppController } from './../src/app.controller';
@@ -46,6 +47,9 @@ export type CrudLikeMock = {
 export type ServiceMocks = Record<ResourceKey, CrudLikeMock>;
 
 export const VALID_UUID = '123e4567-e89b-12d3-a456-426614174000';
+
+const SERVICE_API_KEY = 'test-country-api-key';
+const API_KEY_HEADER = 'x-api-key';
 
 const RESOURCE_KEYS: ResourceKey[] = [
     'countries',
@@ -100,11 +104,19 @@ export const setDefaultServiceResponses = (serviceMocks: ServiceMocks) => {
     }
 };
 
+export const getServiceAuthHeaders = () => ({
+    [API_KEY_HEADER]: process.env.COUNTRY_API_SECRET ?? SERVICE_API_KEY,
+});
+
 export const createE2eTestingApp = async () => {
     const appServiceMock = {
         getHello: jest.fn(() => 'The API is working'),
     };
     const serviceMocks = createServiceMocks();
+
+    if (!process.env.COUNTRY_API_SECRET) {
+        process.env.COUNTRY_API_SECRET = SERVICE_API_KEY;
+    }
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
         controllers: [
@@ -149,6 +161,9 @@ export const describeCrudResourceE2e = (
         let app: INestApplication;
         let serviceMocks: ServiceMocks;
 
+        const withServiceAuth = (req: SupertestTest) =>
+            req.set(getServiceAuthHeaders());
+
         beforeAll(async () => {
             const context = await createE2eTestingApp();
             app = context.app;
@@ -161,8 +176,8 @@ export const describeCrudResourceE2e = (
         });
 
         it(`POST ${basePath}`, async () => {
-            const response = await request(app.getHttpServer())
-                .post(basePath)
+            const response = await withServiceAuth(request(app.getHttpServer())
+                .post(basePath))
                 .send({ label: 'new-item' })
                 .expect(201);
 
@@ -174,21 +189,21 @@ export const describeCrudResourceE2e = (
         });
 
         it(`GET ${basePath}`, async () => {
-            const response = await request(app.getHttpServer()).get(basePath).expect(200);
+            const response = await withServiceAuth(request(app.getHttpServer()).get(basePath)).expect(200);
 
             expect(response.body).toHaveLength(1);
         });
 
         it(`GET ${basePath}/uuid validates uuid`, async () => {
-            await request(app.getHttpServer())
-                .get(`${basePath}/uuid`)
+            await withServiceAuth(request(app.getHttpServer())
+                .get(`${basePath}/uuid`))
                 .query({ uuid: 'not-a-uuid' })
                 .expect(400);
         });
 
         it(`GET ${basePath}/uuid returns one item`, async () => {
-            const response = await request(app.getHttpServer())
-                .get(`${basePath}/uuid`)
+            const response = await withServiceAuth(request(app.getHttpServer())
+                .get(`${basePath}/uuid`))
                 .query({ uuid: VALID_UUID })
                 .expect(200);
 
@@ -200,15 +215,15 @@ export const describeCrudResourceE2e = (
         });
 
         it(`GET ${basePath}/id validates integer id`, async () => {
-            await request(app.getHttpServer())
-                .get(`${basePath}/id`)
+            await withServiceAuth(request(app.getHttpServer())
+                .get(`${basePath}/id`))
                 .query({ id: 'abc' })
                 .expect(400);
         });
 
         it(`GET ${basePath}/id returns one item`, async () => {
-            const response = await request(app.getHttpServer())
-                .get(`${basePath}/id`)
+            const response = await withServiceAuth(request(app.getHttpServer())
+                .get(`${basePath}/id`))
                 .query({ id: 1 })
                 .expect(200);
 
@@ -220,16 +235,16 @@ export const describeCrudResourceE2e = (
         });
 
         it(`PATCH ${basePath} validates uuid`, async () => {
-            await request(app.getHttpServer())
-                .patch(basePath)
+            await withServiceAuth(request(app.getHttpServer())
+                .patch(basePath))
                 .query({ uuid: 'not-a-uuid' })
                 .send({ label: 'updated' })
                 .expect(400);
         });
 
         it(`PATCH ${basePath} updates one item`, async () => {
-            const response = await request(app.getHttpServer())
-                .patch(basePath)
+            const response = await withServiceAuth(request(app.getHttpServer())
+                .patch(basePath))
                 .query({ uuid: VALID_UUID })
                 .send({ label: 'updated' })
                 .expect(200);
@@ -242,29 +257,29 @@ export const describeCrudResourceE2e = (
         });
 
         it(`DELETE ${basePath} validates uuid`, async () => {
-            await request(app.getHttpServer())
-                .delete(basePath)
+            await withServiceAuth(request(app.getHttpServer())
+                .delete(basePath))
                 .query({ uuid: 'not-a-uuid' })
                 .expect(400);
         });
 
         it(`DELETE ${basePath} removes one item`, async () => {
-            await request(app.getHttpServer())
-                .delete(basePath)
+            await withServiceAuth(request(app.getHttpServer())
+                .delete(basePath))
                 .query({ uuid: VALID_UUID })
                 .expect(204);
         });
 
         it(`PATCH ${basePath}/restore validates uuid`, async () => {
-            await request(app.getHttpServer())
-                .patch(`${basePath}/restore`)
+            await withServiceAuth(request(app.getHttpServer())
+                .patch(`${basePath}/restore`))
                 .query({ uuid: 'not-a-uuid' })
                 .expect(400);
         });
 
         it(`PATCH ${basePath}/restore restores one item`, async () => {
-            const response = await request(app.getHttpServer())
-                .patch(`${basePath}/restore`)
+            const response = await withServiceAuth(request(app.getHttpServer())
+                .patch(`${basePath}/restore`))
                 .query({ uuid: VALID_UUID })
                 .expect(200);
 
@@ -280,7 +295,18 @@ export const describeCrudResourceE2e = (
                 new BadRequestException('forced e2e error'),
             );
 
-            await request(app.getHttpServer()).get(basePath).expect(400);
+            await withServiceAuth(request(app.getHttpServer()).get(basePath)).expect(400);
+        });
+
+        it(`GET ${basePath} without api key returns 401`, async () => {
+            await request(app.getHttpServer()).get(basePath).expect(401);
+        });
+
+        it(`GET ${basePath} with invalid api key returns 401`, async () => {
+            await request(app.getHttpServer())
+                .get(basePath)
+                .set(API_KEY_HEADER, 'invalid-key')
+                .expect(401);
         });
 
         if (extraTests) {

@@ -3,6 +3,7 @@ import { INestApplication, BadRequestException, InternalServerErrorException } f
 import request from 'supertest';
 import { WarehousesController } from './warehouses.controller';
 import { WarehousesService } from './warehouses.service';
+import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
@@ -27,6 +28,10 @@ describe('WarehousesController', () => {
   };
 
   beforeAll(async () => {
+    const allowGuard = {
+      canActivate: jest.fn(() => true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WarehousesController],
       providers: [
@@ -35,7 +40,10 @@ describe('WarehousesController', () => {
           useValue: warehousesServiceMock,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(ServiceAuthGuard)
+      .useValue(allowGuard)
+      .compile();
 
     app = module.createNestApplication();
     await app.init();
