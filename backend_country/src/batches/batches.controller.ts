@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
@@ -10,8 +10,10 @@ import { ApiFindAllResponses } from '../utils/decorators/api-find-all-response.d
 import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.decorator';
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
+import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('batches')
+@UseGuards(ServiceAuthGuard)
 @Controller('batches')
 export class BatchesController {
     constructor(private batchesService: BatchesService) { }

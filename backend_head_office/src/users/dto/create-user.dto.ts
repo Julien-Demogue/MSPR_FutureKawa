@@ -4,11 +4,11 @@ import { IsEmail, IsInt, IsOptional, IsString } from 'class-validator';
 export class CreateUserDto {
     @ApiPropertyOptional()
     @IsString()
-    first_name!: string;
+    first_name?: string;
 
     @ApiPropertyOptional()
     @IsString()
-    last_name!: string;
+    last_name?: string;
 
     @ApiProperty()
     @IsEmail()
@@ -19,6 +19,6 @@ export class CreateUserDto {
     password!: string;
 
     @ApiPropertyOptional()
-    @IsInt()
-    id_role!: number;
+    @IsString()
+    role_label!: string;
 }

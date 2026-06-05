@@ -115,6 +115,6 @@ CREATE TABLE alerts (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (id_status) REFERENCES status (id),
+    FOREIGN KEY (id_status) REFERENCES statuses (id),
     FOREIGN KEY (id_statement) REFERENCES statements (id)
 );

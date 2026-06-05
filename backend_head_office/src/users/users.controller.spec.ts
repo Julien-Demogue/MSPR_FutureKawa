@@ -3,6 +3,8 @@ import { INestApplication, BadRequestException, InternalServerErrorException } f
 import request from 'supertest';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { LoginGuard } from '../utils/guards/login.guard';
+import { RoleGuard } from '../utils/guards/role.guard';
 
 jest.mock('uuid', () => ({
     v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
@@ -23,14 +25,16 @@ describe('UsersController', () => {
     };
 
     const createDto = {
-        first_name: 'John',
-        last_name: 'Doe',
         email: 'john.doe@example.com',
         password: 'secret123',
-        id_role: 1,
+        role_label: 'Admin',
     };
 
     beforeAll(async () => {
+        const allowGuard = {
+            canActivate: jest.fn(() => true),
+        };
+
         const module: TestingModule = await Test.createTestingModule({
             controllers: [UsersController],
             providers: [
@@ -39,7 +43,12 @@ describe('UsersController', () => {
                     useValue: usersServiceMock,
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(LoginGuard)
+            .useValue(allowGuard)
+            .overrideGuard(RoleGuard)
+            .useValue(allowGuard)
+            .compile();
 
         app = module.createNestApplication();
         await app.init();

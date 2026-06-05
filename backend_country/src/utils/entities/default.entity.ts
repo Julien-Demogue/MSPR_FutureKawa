@@ -15,7 +15,4 @@ export abstract class DefaultEntity extends BaseEntity {
 
     @DeleteDateColumn({ type: 'timestamp', nullable: true })
     deleted_at?: Date;
-
-    @VersionColumn({ type: 'int', default: 1 })
-    version!: number;
 }

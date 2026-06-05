@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { StatusesService } from './statuses.service';
 import { CreateStatusDto } from './dto/create-status.dto';
@@ -10,8 +10,10 @@ import { ApiFindAllResponses } from '../utils/decorators/api-find-all-response.d
 import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.decorator';
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
+import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('statuses')
+@UseGuards(ServiceAuthGuard)
 @Controller('statuses')
 export class StatusesController {
     constructor(private statusesService: StatusesService) { }

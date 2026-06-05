@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { DefaultEntity } from '../utils/default.entity';
+import { DefaultEntity } from '../utils/entities/default.entity';
 import { Role } from '../roles/role.entity';
 
 @Entity('users')
@@ -18,6 +18,9 @@ export class User extends DefaultEntity {
 
     @Column({ type: 'varchar', length: 255, nullable: true })
     refresh_token?: string;
+
+    @Column({ type: 'timestamp' })
+    last_login?: Date;
 
     @Column({ name: 'id_role' })
     id_role!: number;

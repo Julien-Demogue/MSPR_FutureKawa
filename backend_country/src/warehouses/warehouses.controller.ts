@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { WarehousesService } from './warehouses.service';
 import { CreateWarehouseDto } from './dto/create-warehouse.dto';
@@ -10,8 +10,10 @@ import { ApiFindAllResponses } from '../utils/decorators/api-find-all-response.d
 import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.decorator';
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
+import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('warehouses')
+@UseGuards(ServiceAuthGuard)
 @Controller('warehouses')
 export class WarehousesController {
     constructor(private warehousesService: WarehousesService) { }

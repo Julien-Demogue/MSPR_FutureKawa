@@ -8,12 +8,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { isNullOrEmpty, isValidEmail, isValidId, isValidUuid } from '../utils/fields-validation.utils';
+import bcrypt from 'bcrypt';
+import { RolesService } from '../roles/roles.service';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User) private repo: Repository<User>,
-        @InjectRepository(Role) private rolesRepo: Repository<Role>,
+        private readonly rolesService: RolesService,
     ) { }
 
     async create(createUserDto: CreateUserDto) {
@@ -25,19 +27,11 @@ export class UsersService {
             throw new BadRequestException(ApiResponseMessages.invalidField('password'));
         }
 
-        if (isNullOrEmpty(createUserDto.first_name)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('first_name'));
+        if (isNullOrEmpty(createUserDto.role_label)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('role_label'));
         }
 
-        if (isNullOrEmpty(createUserDto.last_name)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('last_name'));
-        }
-
-        if (!isValidId(createUserDto.id_role)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('id_role'));
-        }
-
-        const role = await this.rolesRepo.findOneBy({ id: createUserDto.id_role });
+        const role = await this.rolesService.findOneByLabel(createUserDto.role_label);
         if (!role) {
             throw new BadRequestException(ApiResponseMessages.notFound(Role));
         }
@@ -48,7 +42,8 @@ export class UsersService {
         }
 
         try {
-            const user = this.repo.create({ ...createUserDto, uuid: uuidv4() });
+            createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
+            const user = this.repo.create({ ...createUserDto, uuid: uuidv4(), role, id_role: role.id });
             return await this.repo.save(user);
         } catch (error) {
             throw new InternalServerErrorException(ApiResponseMessages.internalServerError(User, error));
@@ -119,12 +114,12 @@ export class UsersService {
             throw new BadRequestException(ApiResponseMessages.invalidField('last_name'));
         }
 
-        if (updateUserDto.id_role !== undefined) {
-            if (!isValidId(updateUserDto.id_role)) {
-                throw new BadRequestException(ApiResponseMessages.invalidField('id_role'));
+        if (updateUserDto.role_label !== undefined) {
+            if (isNullOrEmpty(updateUserDto.role_label)) {
+                throw new BadRequestException(ApiResponseMessages.invalidField('role_label'));
             }
 
-            const role = await this.rolesRepo.findOneBy({ id: updateUserDto.id_role });
+            const role = await this.rolesService.findOneByLabel(updateUserDto.role_label);
             if (!role) {
                 throw new BadRequestException(ApiResponseMessages.notFound(Role));
             }
@@ -140,6 +135,9 @@ export class UsersService {
         }
 
         try {
+            if (updateUserDto.password) {
+                updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+            }
             await this.repo.update({ uuid }, updateUserDto);
             return await this.findOneByUuid(uuid);
         } catch (error) {
