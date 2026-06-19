@@ -16,7 +16,7 @@ services:
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: FutureKawa_Brasil
+      MYSQL_DATABASE: FutureKawa
       TZ: "Europe/Paris"
     ports:
       - "3307:3306"

@@ -94,8 +94,11 @@ CREATE TABLE statuses (
 CREATE TABLE statements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     uuid VARCHAR(36) NOT NULL UNIQUE,
-    temperature DECIMAL(5, 2),
-    humidity DECIMAL(5, 2),
+    value DECIMAL(5, 2),
+    type ENUM(
+        'TEMPERATURE',
+        'HUMIDITY'
+    ) NOT NULL,
     id_warehouse INT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
