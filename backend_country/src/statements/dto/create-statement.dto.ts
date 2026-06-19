@@ -1,15 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDecimal, IsNumber } from "class-validator";
+import { IsDecimal, IsEnum, IsNumber } from "class-validator";
 
 export class CreateStatementDto {
 
     @ApiProperty()
     @IsDecimal({ decimal_digits: '5,2' })
-    temperature!: number;
+    value!: number;
 
     @ApiProperty()
-    @IsDecimal({ decimal_digits: '5,2' })
-    humidity!: number;
+    @IsEnum(['TEMPERATURE', 'HUMIDITY'])
+    type!: string;
 
     @ApiProperty()
     @IsNumber()

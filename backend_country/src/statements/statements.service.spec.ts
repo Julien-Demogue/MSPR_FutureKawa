@@ -7,6 +7,10 @@ import { WarehousesService } from '../warehouses/warehouses.service';
 import { StatusesService } from '../statuses/statuses.service';
 import { AlertsService } from '../alerts/alerts.service';
 
+jest.mock('../utils/email.utils', () => ({
+  sendEmail: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('uuid', () => ({
   v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
 }));
@@ -15,8 +19,10 @@ describe('StatementsService', () => {
   let service: StatementsService;
   let consoleErrorSpy: jest.SpyInstance;
   const validUuid = '550e8400-e29b-41d4-a716-446655440000';
+
   const repoMock = {
     findOneBy: jest.fn(),
+    findBy: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
@@ -24,6 +30,7 @@ describe('StatementsService', () => {
     softDelete: jest.fn(),
     restore: jest.fn(),
   };
+
   const warehousesServiceMock = {
     findOneById: jest.fn(),
   };
@@ -70,12 +77,25 @@ describe('StatementsService', () => {
   });
 
   it('should return all statements', async () => {
-    repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 }]);
+    repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 }]);
 
     const result = await service.findAll();
 
     expect(result).toHaveLength(1);
     expect(repoMock.find).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return all statements filtered by metric type', async () => {
+    repoMock.findBy.mockResolvedValue([{ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1, type: 'TEMPERATURE' }]);
+
+    const result = await service.findAllByType('TEMPERATURE');
+
+    expect(result).toHaveLength(1);
+    expect(repoMock.findBy).toHaveBeenCalledWith({ type: 'TEMPERATURE' });
+  });
+
+  it('should throw for invalid metric type in findAllByType', async () => {
+    await expect(service.findAllByType('INVALID_TYPE')).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should create a statement when payload is valid', async () => {
@@ -99,36 +119,48 @@ describe('StatementsService', () => {
     repoMock.create.mockImplementation((value) => value);
     repoMock.save.mockImplementation(async (value) => ({ id: 1, ...value }));
 
-    const result = await service.create({ temperature: 23.5, humidity: 65, id_warehouse: 1 });
+    const result = await service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
 
     expect(result.id).toBe(1);
     expect(result.uuid).toBeDefined();
   });
 
   it('should throw for invalid temperature value', async () => {
-    await expect(service.create({ temperature: NaN, humidity: 65, id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.create({ value: NaN, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw for invalid humidity value', async () => {
-    await expect(service.create({ temperature: 23.5, humidity: 150, id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.create({ value: NaN, type: 'HUMIDITY', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw for invalid id_warehouse on create', async () => {
-    await expect(service.create({ temperature: 23.5, humidity: 65, id_warehouse: 0 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 0 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw when related warehouse is not found on create', async () => {
     warehousesServiceMock.findOneById.mockResolvedValue(null);
 
-    await expect(service.create({ temperature: 23.5, humidity: 65, id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should wrap repository save errors on create', async () => {
-    warehousesServiceMock.findOneById.mockResolvedValue({ id: 1, name: 'Warehouse A' });
+    warehousesServiceMock.findOneById.mockResolvedValue({
+      id: 1,
+      name: 'Warehouse A',
+      farm: {
+        country: {
+          temperature_ideal: 20,
+          temperature_tolerance_degrees: 5,
+          humidity_ideal: 60,
+          humidity_tolerance_percents: 10,
+        }
+      },
+      batches: []
+    });
     repoMock.create.mockImplementation((value) => value);
     repoMock.save.mockRejectedValue(new Error('db-error'));
 
-    await expect(service.create({ temperature: 23.5, humidity: 65, id_warehouse: 1 })).rejects.toBeInstanceOf(InternalServerErrorException);
+    await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it('should throw for invalid uuid in findOneByUuid', async () => {
@@ -142,7 +174,7 @@ describe('StatementsService', () => {
   });
 
   it('should return one statement by uuid', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
 
     const result = await service.findOneByUuid(validUuid);
 
@@ -160,7 +192,7 @@ describe('StatementsService', () => {
   });
 
   it('should return one statement by id', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
 
     const result = await service.findOneById(1);
 
@@ -168,11 +200,11 @@ describe('StatementsService', () => {
   });
 
   it('should throw for invalid uuid on update', async () => {
-    await expect(service.update('bad-uuid', { temperature: 24.2 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.update('bad-uuid', { value: 24.2 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('should throw for invalid humidity on update', async () => {
-    await expect(service.update(validUuid, { humidity: 150 })).rejects.toBeInstanceOf(BadRequestException);
+  it('should throw for invalid type on update', async () => {
+    await expect(service.update(validUuid, { type: 'INVALID' })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw for invalid id_warehouse on update', async () => {
@@ -180,26 +212,27 @@ describe('StatementsService', () => {
   });
 
   it('should throw when related warehouse is not found on update', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
     warehousesServiceMock.findOneById.mockResolvedValue(null);
 
     await expect(service.update(validUuid, { id_warehouse: 2 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should update and return the statement', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     repoMock.update.mockResolvedValue(undefined);
 
-    const result = await service.update(validUuid, { temperature: 24.2 });
+    const result = await service.update(validUuid, { value: 24.2 });
 
-    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { temperature: 24.2 });
+    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { value: 24.2 });
     expect(result.uuid).toBe(validUuid);
   });
 
   it('should wrap repository update errors', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     repoMock.update.mockRejectedValue(new Error('db-error'));
 
-    await expect(service.update(validUuid, { temperature: 24.2 })).rejects.toBeInstanceOf(InternalServerErrorException);
+    await expect(service.update(validUuid, { value: 24.2 })).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it('should throw for invalid uuid on remove', async () => {
@@ -207,7 +240,7 @@ describe('StatementsService', () => {
   });
 
   it('should remove an existing statement', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     repoMock.softDelete.mockResolvedValue(undefined);
 
     await expect(service.remove(validUuid)).resolves.toBeUndefined();
@@ -215,7 +248,7 @@ describe('StatementsService', () => {
   });
 
   it('should wrap repository softDelete errors', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     repoMock.softDelete.mockRejectedValue(new Error('db-error'));
 
     await expect(service.remove(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
@@ -226,14 +259,14 @@ describe('StatementsService', () => {
   });
 
   it('should throw when trying to restore an existing statement', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60 });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     await expect(service.restore(validUuid)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should restore and return statement when deleted entity exists', async () => {
     repoMock.findOneBy
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 1, uuid: validUuid, temperature: 23.5, humidity: 60, id_warehouse: 1 });
+      .mockResolvedValueOnce({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     repoMock.restore.mockResolvedValue(undefined);
 
     const result = await service.restore(validUuid);

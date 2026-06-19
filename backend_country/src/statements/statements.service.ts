@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Statement } from './statement.entity';
 import { Repository } from 'typeorm';
 import { CreateStatementDto } from './dto/create-statement.dto';
-import { isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
+import { isNullOrEmpty, isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateStatementDto } from './dto/update-statement.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,6 +21,7 @@ export class StatementsService {
         @Inject(forwardRef(() => AlertsService)) private alertsService: AlertsService,
         private statusService: StatusesService
     ) { }
+    metricTypes = ['TEMPERATURE', 'HUMIDITY'];
 
     async sendAlertOnTemperatureOrHumidityOutOfRange(statement: Statement, warehouse: Warehouse) {
         const country = warehouse.farm.country;
@@ -29,20 +30,20 @@ export class StatementsService {
         const tempTolerance = Number(country.temperature_tolerance_degrees);
         const maxTemp = tempIdeal + tempTolerance;
         const minTemp = tempIdeal - tempTolerance;
-        const temperatureValue = Number(statement.temperature);
 
         const humidityIdeal = Number(country.humidity_ideal);
         const humidityTolerance = Number(country.humidity_tolerance_percents);
         const maxHumidity = humidityIdeal + humidityTolerance;
         const minHumidity = humidityIdeal - humidityTolerance;
-        const humidityValue = Number(statement.humidity);
+
+        const value = Number(statement.value);
 
         let haveAlert = false;
-        if (temperatureValue < minTemp || temperatureValue > maxTemp) {
+        if (statement.type === 'TEMPERATURE' && (value < minTemp || value > maxTemp)) {
             haveAlert = true;
             const subject = 'Temperature Alert';
             const message = `<p>The temperature of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
-                ` Current temperature: ${temperatureValue}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
+                ` Current temperature: ${value}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
 
             await sendEmail(
                 'support.futurekawa@gmail.com', // Replace with the actual recipient email address
@@ -65,11 +66,11 @@ export class StatementsService {
             }
         }
 
-        if (humidityValue < minHumidity || humidityValue > maxHumidity) {
+        if (statement.type === 'HUMIDITY' && (value < minHumidity || value > maxHumidity)) {
             haveAlert = true;
             const subject = 'Humidity Alert';
             const message = `<p>The humidity of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
-                ` Current humidity: ${humidityValue}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
+                ` Current humidity: ${value}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
 
             await sendEmail(
                 'support.futurekawa@gmail.com', // Replace with the actual recipient email address
@@ -106,12 +107,12 @@ export class StatementsService {
 
 
     async create(createStatementDto: CreateStatementDto) {
-        if (!isValidNumber(createStatementDto.temperature)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('temperature'));
+        if (!isValidNumber(createStatementDto.value)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('value'));
         }
 
-        if (!isValidPercent(createStatementDto.humidity)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('humidity'));
+        if (isNullOrEmpty(createStatementDto.type) || !this.metricTypes.includes(createStatementDto.type)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
         }
 
         if (!isValidId(createStatementDto.id_warehouse)) {
@@ -139,6 +140,13 @@ export class StatementsService {
 
     async findAll() {
         return await this.repo.find();
+    }
+
+    async findAllByType(type: string) {
+        if (!this.metricTypes.includes(type)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+        }
+        return await this.repo.findBy({ type });
     }
 
     async findOneByUuid(uuid: string) {
@@ -170,12 +178,12 @@ export class StatementsService {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
-        if (updateStatementDto.temperature !== undefined && !isValidNumber(updateStatementDto.temperature)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('temperature'));
+        if (updateStatementDto.value !== undefined && !isValidNumber(updateStatementDto.value)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('value'));
         }
 
-        if (updateStatementDto.humidity !== undefined && !isValidPercent(updateStatementDto.humidity)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('humidity'));
+        if (updateStatementDto.type !== undefined && (isNullOrEmpty(updateStatementDto.type) || !this.metricTypes.includes(updateStatementDto.type))) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
         }
 
         if (updateStatementDto.id_warehouse !== undefined) {

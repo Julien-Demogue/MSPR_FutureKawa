@@ -5,22 +5,22 @@ import { Payload } from '@nestjs/microservices/decorators/payload.decorator';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get()
   getHello(): string {
     return this.appService.getHello();
   }
-  
+
   @EventPattern('temperature')
   handleTemperatureUpdate(@Payload() data: any) {
-    console.log('Nouveau message MQTT reçu :', data);
-    // Logique de traitement ici
+    console.log('New MQTT message received :', data);
+    // TODO : Add new statement entry for temperature
   }
 
   @EventPattern('humidity')
   handleHumidityUpdate(@Payload() data: any) {
-    console.log('Nouveau message MQTT reçu :', data);
-    // Logique de traitement ici
+    console.log('New MQTT message received :', data);
+    // TODO : Add new statement entry for humidity
   }
 }
