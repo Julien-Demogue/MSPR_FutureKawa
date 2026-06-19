@@ -15,6 +15,7 @@ describe('StatementsController', () => {
   const statementsServiceMock = {
     create: jest.fn(),
     findAll: jest.fn(),
+    findAllByType: jest.fn(),
     findOneByUuid: jest.fn(),
     findOneById: jest.fn(),
     update: jest.fn(),
@@ -78,6 +79,16 @@ describe('StatementsController', () => {
     statementsServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
 
     await request(app.getHttpServer()).get('/statements').expect(500);
+  });
+
+  it('GET /statements/type should return all statements filtered by metric type', async () => {
+    statementsServiceMock.findAllByType.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
+    await request(app.getHttpServer()).get('/statements/type').query({ type: 'TEMPERATURE' }).expect(200);
+  });
+
+  it('GET /statements/type should propagate service internal errors', async () => {
+    statementsServiceMock.findAllByType.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+    await request(app.getHttpServer()).get('/statements/type').query({ type: 'TEMPERATURE' }).expect(500);
   });
 
   it('GET /statements/uuid should return 400 for invalid uuid', async () => {

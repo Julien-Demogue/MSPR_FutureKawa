@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Statement } from './statement.entity';
 import { Repository } from 'typeorm';
 import { CreateStatementDto } from './dto/create-statement.dto';
-import { isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
+import { isNullOrEmpty, isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateStatementDto } from './dto/update-statement.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -107,12 +107,12 @@ export class StatementsService {
 
 
     async create(createStatementDto: CreateStatementDto) {
-        if (!isValidNumber(createStatementDto.temperature)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('temperature'));
+        if (!isValidNumber(createStatementDto.value)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('value'));
         }
 
-        if (!isValidPercent(createStatementDto.humidity)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('humidity'));
+        if (isNullOrEmpty(createStatementDto.type) || !this.metricTypes.includes(createStatementDto.type)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
         }
 
         if (!isValidId(createStatementDto.id_warehouse)) {
@@ -178,12 +178,12 @@ export class StatementsService {
             throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
         }
 
-        if (updateStatementDto.temperature !== undefined && !isValidNumber(updateStatementDto.temperature)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('temperature'));
+        if (updateStatementDto.value !== undefined && !isValidNumber(updateStatementDto.value)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('value'));
         }
 
-        if (updateStatementDto.humidity !== undefined && !isValidPercent(updateStatementDto.humidity)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('humidity'));
+        if (updateStatementDto.type !== undefined && (isNullOrEmpty(updateStatementDto.type) || !this.metricTypes.includes(updateStatementDto.type))) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
         }
 
         if (updateStatementDto.id_warehouse !== undefined) {
