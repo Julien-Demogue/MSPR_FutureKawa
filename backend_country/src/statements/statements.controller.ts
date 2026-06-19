@@ -37,7 +37,6 @@ export class StatementsController {
     }
 
     @Get('/type')
-    @ApiBody({ type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
     @ApiOperation({ summary: 'Retrieve all statements filtered by metric type' })
     @ApiQuery({ name: 'type', required: true, type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
     async findAllByType(@Query('type') type: string) {

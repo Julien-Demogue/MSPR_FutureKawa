@@ -16,20 +16,30 @@ export class AppController {
   @EventPattern('temperature')
   handleTemperatureUpdate(@Payload() data: any) {
     console.log('New MQTT message received :', data);
-    this.statementsService.create({
-      value: Number(data.value),
-      type: 'TEMPERATURE',
-      id_warehouse: 1 // For now we only have one warehouse
-    });
+    try {
+      this.statementsService.create({
+        value: Number(data.value),
+        type: 'TEMPERATURE',
+        id_warehouse: 1 // For now we only have one warehouse
+      });
+    }
+    catch (error) {
+      console.error('Error creating statement:', error);
+    }
   }
 
   @EventPattern('humidity')
   handleHumidityUpdate(@Payload() data: any) {
     console.log('New MQTT message received :', data);
-    this.statementsService.create({
-      value: Number(data.value),
-      type: 'HUMIDITY',
-      id_warehouse: 1 // For now we only have one warehouse
-    });
+    try {
+      this.statementsService.create({
+        value: Number(data.value),
+        type: 'HUMIDITY',
+        id_warehouse: 1 // For now we only have one warehouse
+      });
+    }
+    catch (error) {
+      console.error('Error creating statement:', error);
+    }
   }
 }
