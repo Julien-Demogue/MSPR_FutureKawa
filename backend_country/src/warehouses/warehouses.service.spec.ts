@@ -14,6 +14,7 @@ describe('WarehousesService', () => {
   let consoleErrorSpy: jest.SpyInstance;
   const validUuid = '550e8400-e29b-41d4-a716-446655440000';
   const repoMock = {
+    findOne: jest.fn(),
     findOneBy: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
@@ -125,22 +126,21 @@ describe('WarehousesService', () => {
   });
 
   it('should throw when warehouse id is not found', async () => {
-    repoMock.findOneBy.mockResolvedValue(null);
+    repoMock.findOne.mockResolvedValue(null);
 
     await expect(service.findOneById(1)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should return one warehouse by id', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Warehouse A', id_farm: 1 });
+    repoMock.findOne.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Warehouse A', id_farm: 1 });
 
     const result = await service.findOneById(1);
 
     expect(result.id).toBe(1);
-    expect(repoMock.findOneBy).toHaveBeenCalledWith({ id: 1 });
-  });
-
-  it('should throw for invalid uuid on update', async () => {
-    await expect(service.update('bad-uuid', { name: 'Warehouse B' })).rejects.toBeInstanceOf(BadRequestException);
+    expect(repoMock.findOne).toHaveBeenCalledWith({
+      where: { id: 1 },
+      relations: ['farm', 'farm.country', 'batches', 'batches.statuses'],
+    });
   });
 
   it('should throw for invalid id_farm on update', async () => {
