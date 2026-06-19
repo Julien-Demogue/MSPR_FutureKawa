@@ -30,20 +30,20 @@ export class StatementsService {
         const tempTolerance = Number(country.temperature_tolerance_degrees);
         const maxTemp = tempIdeal + tempTolerance;
         const minTemp = tempIdeal - tempTolerance;
-        const temperatureValue = Number(statement.temperature);
 
         const humidityIdeal = Number(country.humidity_ideal);
         const humidityTolerance = Number(country.humidity_tolerance_percents);
         const maxHumidity = humidityIdeal + humidityTolerance;
         const minHumidity = humidityIdeal - humidityTolerance;
-        const humidityValue = Number(statement.humidity);
+
+        const value = Number(statement.value);
 
         let haveAlert = false;
-        if (temperatureValue < minTemp || temperatureValue > maxTemp) {
+        if (statement.type === 'TEMPERATURE' && (value < minTemp || value > maxTemp)) {
             haveAlert = true;
             const subject = 'Temperature Alert';
             const message = `<p>The temperature of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
-                ` Current temperature: ${temperatureValue}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
+                ` Current temperature: ${value}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
 
             await sendEmail(
                 'support.futurekawa@gmail.com', // Replace with the actual recipient email address
@@ -66,11 +66,11 @@ export class StatementsService {
             }
         }
 
-        if (humidityValue < minHumidity || humidityValue > maxHumidity) {
+        if (statement.type === 'HUMIDITY' && (value < minHumidity || value > maxHumidity)) {
             haveAlert = true;
             const subject = 'Humidity Alert';
             const message = `<p>The humidity of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
-                ` Current humidity: ${humidityValue}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
+                ` Current humidity: ${value}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
 
             await sendEmail(
                 'support.futurekawa@gmail.com', // Replace with the actual recipient email address
@@ -142,12 +142,12 @@ export class StatementsService {
         return await this.repo.find();
     }
 
-    // async findAllByMetricType(metricType: string) {
-    //     if (!this.metricTypes.includes(metricType)) {
-    //         throw new BadRequestException(ApiResponseMessages.invalidField('metricType'));
-    //     }
-    //     return await this.repo.findBy({ metricType });
-    // }
+    async findAllByType(type: string) {
+        if (!this.metricTypes.includes(type)) {
+            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+        }
+        return await this.repo.findBy({ type });
+    }
 
     async findOneByUuid(uuid: string) {
         if (!isValidUuid(uuid)) {
