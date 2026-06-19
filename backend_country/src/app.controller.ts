@@ -12,9 +12,14 @@ export class AppController {
     return this.appService.getHello();
   }
   
-  // Écoute le topic 'capteurs/temperature'
-  @EventPattern('capteurs/temperature')
+  @EventPattern('temperature')
   handleTemperatureUpdate(@Payload() data: any) {
+    console.log('Nouveau message MQTT reçu :', data);
+    // Logique de traitement ici
+  }
+
+  @EventPattern('humidity')
+  handleHumidityUpdate(@Payload() data: any) {
     console.log('Nouveau message MQTT reçu :', data);
     // Logique de traitement ici
   }

@@ -7,11 +7,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
-// Configuration du microservice MQTT
+  const host = process.env.MQTT_BROKER_HOST ?? 'localhost';
+  const port = parseInt(process.env.MQTT_BROKER_PORT ?? '1883', 10);
+  // Configuration du microservice MQTT
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.MQTT,
     options: {
-      url: 'mqtt://localhost:1883', // Remplacez par l'URL de votre broker
+      url: 'mqtt://'+host+':'+port,
     },
   });
 
@@ -21,7 +23,7 @@ async function bootstrap() {
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('doc', app, documentFactory);
-  
+  await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
