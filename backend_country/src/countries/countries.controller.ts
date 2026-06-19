@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { CountriesService } from './countries.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
@@ -14,6 +14,7 @@ import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('countries')
 @UseGuards(ServiceAuthGuard)
+@ApiSecurity('api-key-auth')
 @Controller('countries')
 export class CountriesController {
     constructor(private countriesService: CountriesService) { }

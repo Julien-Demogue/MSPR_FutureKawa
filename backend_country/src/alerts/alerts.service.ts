@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Alert } from './alert.entity';
 import { Repository } from 'typeorm';
@@ -14,7 +14,7 @@ import { StatusesService } from '../statuses/statuses.service';
 export class AlertsService {
     constructor(@InjectRepository(Alert) private repo: Repository<Alert>,
         private statusesService: StatusesService,
-        private statementsService: StatementsService
+        @Inject(forwardRef(() => StatementsService)) private statementsService: StatementsService
     ) { }
 
     async create(createAlertDto: CreateAlertDto) {

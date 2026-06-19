@@ -4,6 +4,7 @@ import { BadRequestException, InternalServerErrorException } from '@nestjs/commo
 import { BatchesService } from './batches.service';
 import { Batch } from './batch.entity';
 import { WarehousesService } from '../warehouses/warehouses.service';
+import { StatusesService } from '../statuses/statuses.service';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
@@ -25,7 +26,9 @@ describe('BatchesService', () => {
   const warehousesServiceMock = {
     findOneById: jest.fn(),
   };
-
+  const statusesServiceMock = {
+    create: jest.fn(),
+  };
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,6 +41,10 @@ describe('BatchesService', () => {
           provide: WarehousesService,
           useValue: warehousesServiceMock,
         },
+        {
+          provide: StatusesService,
+          useValue: statusesServiceMock,
+        }
       ],
     }).compile();
 

@@ -58,7 +58,10 @@ export class WarehousesService {
             throw new BadRequestException(ApiResponseMessages.invalidField('id'));
         }
 
-        const warehouse = await this.repo.findOneBy({ id });
+        const warehouse = await this.repo.findOne({
+            where: { id },
+            relations: ['farm', 'farm.country', 'batches', 'batches.statuses'],
+        });
         if (!warehouse) {
             throw new BadRequestException(ApiResponseMessages.notFound(Warehouse));
         }

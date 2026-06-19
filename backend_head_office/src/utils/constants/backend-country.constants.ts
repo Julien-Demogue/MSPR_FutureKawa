@@ -8,4 +8,6 @@ export const statement_url = `${base_url}statements/`;
 export const status_url = `${base_url}statuses/`;
 export const warehouse_url = `${base_url}warehouses/`;
 
-export const default_headers = { 'x-api-key': process.env.COUNTRY_API_SECRET };
+export const getDefaultHeaders = () => ({
+    'x-api-key': process.env.COUNTRY_API_SECRET,
+});

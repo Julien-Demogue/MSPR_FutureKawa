@@ -13,13 +13,22 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.MQTT,
     options: {
-      url: 'mqtt://'+host+':'+port,
+      url: 'mqtt://' + host + ':' + port,
     },
   });
 
   const config = new DocumentBuilder()
     .setTitle('FutureKawa - Backend Country')
     .setVersion('1.0')
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-api-key',
+        in: 'header',
+        description: 'Enter your access secret here',
+      },
+      'api-key-auth',
+    )
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('doc', app, documentFactory);

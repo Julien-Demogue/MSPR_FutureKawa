@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { StatementsService } from './statements.service';
 import { CreateStatementDto } from './dto/create-statement.dto';
 import { UpdateStatementDto } from './dto/update-statement.dto';
@@ -14,12 +14,13 @@ import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('statements')
 @UseGuards(ServiceAuthGuard)
+@ApiSecurity('api-key-auth')
 @Controller('statements')
 export class StatementsController {
     constructor(private statementsService: StatementsService) { }
 
     @Post()
-    @ApiOperation({ summary: 'Create a new warehouse' })
+    @ApiOperation({ summary: 'Create a new statement' })
     @ApiBody({ type: CreateStatementDto })
     @CommonApiResponses()
     @ApiCreateResponses(Statement)

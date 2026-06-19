@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Batch } from './batch.entity';
 import { Repository } from 'typeorm';
@@ -8,10 +8,15 @@ import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateBatchDto } from './dto/update-batch.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { WarehousesService } from '../warehouses/warehouses.service';
+import { StatusesService } from '../statuses/statuses.service';
 
 @Injectable()
 export class BatchesService {
-    constructor(@InjectRepository(Batch) private repo: Repository<Batch>, private warehousesService: WarehousesService,) { }
+    constructor(
+        @InjectRepository(Batch) private repo: Repository<Batch>,
+        private warehousesService: WarehousesService,
+        @Inject(forwardRef(() => StatusesService)) private statusesService: StatusesService
+    ) { }
 
     async create(createBatchDto: CreateBatchDto) {
         if (!isValidId(createBatchDto.id_warehouse)) {
@@ -25,8 +30,14 @@ export class BatchesService {
 
         try {
             const uuid = uuidv4();
+
             const batch = this.repo.create({ ...createBatchDto, uuid });
-            return await this.repo.save(batch);
+            const savedBatch = await this.repo.save(batch);
+
+            // Create an associated status to OK 
+            await this.statusesService.create({ value: 'OK', id_batch: batch.id });
+
+            return savedBatch;
         }
         catch (error) {
             throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Batch, error));

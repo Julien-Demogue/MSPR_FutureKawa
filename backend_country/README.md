@@ -7,6 +7,8 @@ For the first time using this API, you need to follow these steps :
   - `DB_USER=example_username` : Database login
   - `DB_PASSWORD=example_password` : Database password
   - `DB_HOST=host.docker.internal` : Database environment
+  - `EMAIL_ADDRESS=email.example.com` : Email address to send alert messages
+  - `EMAIL_APP_PASSWORD=password1234` : Email application password used to send alert messages
 
 
 ### Useful commands

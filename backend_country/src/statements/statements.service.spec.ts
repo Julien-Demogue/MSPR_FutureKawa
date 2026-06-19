@@ -4,6 +4,8 @@ import { BadRequestException, InternalServerErrorException } from '@nestjs/commo
 import { StatementsService } from './statements.service';
 import { Statement } from './statement.entity';
 import { WarehousesService } from '../warehouses/warehouses.service';
+import { StatusesService } from '../statuses/statuses.service';
+import { AlertsService } from '../alerts/alerts.service';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
@@ -25,6 +27,12 @@ describe('StatementsService', () => {
   const warehousesServiceMock = {
     findOneById: jest.fn(),
   };
+  const alertsServiceMock = {
+    create: jest.fn(),
+  };
+  const statusesServiceMock = {
+    create: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -37,6 +45,14 @@ describe('StatementsService', () => {
         {
           provide: WarehousesService,
           useValue: warehousesServiceMock,
+        },
+        {
+          provide: AlertsService,
+          useValue: alertsServiceMock,
+        },
+        {
+          provide: StatusesService,
+          useValue: statusesServiceMock,
         },
       ],
     }).compile();
@@ -63,7 +79,23 @@ describe('StatementsService', () => {
   });
 
   it('should create a statement when payload is valid', async () => {
-    warehousesServiceMock.findOneById.mockResolvedValue({ id: 1, name: 'Warehouse A' });
+    warehousesServiceMock.findOneById.mockResolvedValue({
+      id: 1,
+      name: 'Warehouse A',
+      farm: {
+        id: 1,
+        name: 'Farm A',
+        country: {
+          id: 1,
+          name: 'Country A',
+          temperature_ideal: 20,
+          temperature_tolerance_degrees: 5,
+          humidity_ideal: 60,
+          humidity_tolerance_percents: 10,
+        }
+      },
+      batches: []
+    });
     repoMock.create.mockImplementation((value) => value);
     repoMock.save.mockImplementation(async (value) => ({ id: 1, ...value }));
 
