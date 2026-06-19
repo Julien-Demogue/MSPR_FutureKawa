@@ -25,27 +25,26 @@ export class StatementsService {
     async sendAlertOnTemperatureOrHumidityOutOfRange(statement: Statement, warehouse: Warehouse) {
         const country = warehouse.farm.country;
 
-        const tempIdeal = country.temperature_ideal;
-        const tempTolerance = country.temperature_tolerance_degrees;
+        const tempIdeal = Number(country.temperature_ideal);
+        const tempTolerance = Number(country.temperature_tolerance_degrees);
         const maxTemp = tempIdeal + tempTolerance;
         const minTemp = tempIdeal - tempTolerance;
-        const temperatureValue = statement.temperature;
+        const temperatureValue = Number(statement.temperature);
 
-        const humidityIdeal = country.humidity_ideal;
-        const humidityTolerance = country.humidity_tolerance_percents;
+        const humidityIdeal = Number(country.humidity_ideal);
+        const humidityTolerance = Number(country.humidity_tolerance_percents);
         const maxHumidity = humidityIdeal + humidityTolerance;
         const minHumidity = humidityIdeal - humidityTolerance;
-        const humidityValue = statement.humidity;
+        const humidityValue = Number(statement.humidity);
 
         let haveAlert = false;
-
         if (temperatureValue < minTemp || temperatureValue > maxTemp) {
             haveAlert = true;
             const subject = 'Temperature Alert';
             const message = `<p>The temperature of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
                 ` Current temperature: ${temperatureValue}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
 
-            sendEmail(
+            await sendEmail(
                 'support.futurekawa@gmail.com', // Replace with the actual recipient email address
                 subject,
                 `<p>${message}</p>`
@@ -55,6 +54,7 @@ export class StatementsService {
             for (const batch of warehouse.batches) {
                 for (const status of batch.statuses) {
                     if (status.value === 'OK') { // Only create alerts for statuses that are currently OK
+                        await this.statusService.create({ value: 'ALERT', id_batch: batch.id });
                         await this.alertsService.create({
                             value: message,
                             id_status: status.id,
@@ -71,7 +71,7 @@ export class StatementsService {
             const message = `<p>The humidity of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
                 ` Current humidity: ${humidityValue}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
 
-            sendEmail(
+            await sendEmail(
                 'support.futurekawa@gmail.com', // Replace with the actual recipient email address
                 subject,
                 `<p>${message}</p>`
@@ -81,7 +81,7 @@ export class StatementsService {
             for (const batch of warehouse.batches) {
                 for (const status of batch.statuses) {
                     if (status.value === 'OK') { // Only create alerts for statuses that are currently OK
-                        await this.statusService.update(status.uuid, { value: 'ALERT' });
+                        await this.statusService.create({ value: 'ALERT', id_batch: batch.id });
                         await this.alertsService.create({
                             value: message,
                             id_status: status.id,
@@ -97,7 +97,7 @@ export class StatementsService {
             for (const batch of warehouse.batches) {
                 for (const status of batch.statuses) {
                     if (status.value === 'ALERT') {
-                        await this.statusService.update(status.uuid, { value: 'OK' });
+                        await this.statusService.create({ value: 'OK', id_batch: batch.id });
                     }
                 }
             }
@@ -126,10 +126,11 @@ export class StatementsService {
         try {
             const uuid = uuidv4();
             const statement = this.repo.create({ ...createStatementDto, uuid });
+            const savedStatement = await this.repo.save(statement);
 
             await this.sendAlertOnTemperatureOrHumidityOutOfRange(statement, warehouse);
 
-            return await this.repo.save(statement);
+            return savedStatement;
         }
         catch (error) {
             throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));

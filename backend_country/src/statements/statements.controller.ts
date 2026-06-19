@@ -20,7 +20,7 @@ export class StatementsController {
     constructor(private statementsService: StatementsService) { }
 
     @Post()
-    @ApiOperation({ summary: 'Create a new warehouse' })
+    @ApiOperation({ summary: 'Create a new statement' })
     @ApiBody({ type: CreateStatementDto })
     @CommonApiResponses()
     @ApiCreateResponses(Statement)
