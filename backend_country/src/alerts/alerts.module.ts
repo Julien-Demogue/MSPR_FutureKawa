@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AlertsService } from './alerts.service';
 import { AlertsController } from './alerts.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -7,7 +7,7 @@ import { StatusesModule } from '../statuses/statuses.module';
 import { StatementsModule } from '../statements/statements.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Alert]), StatusesModule, StatementsModule],
+  imports: [TypeOrmModule.forFeature([Alert]), StatusesModule, forwardRef(() => StatementsModule)],
   providers: [AlertsService],
   controllers: [AlertsController],
   exports: [AlertsService]

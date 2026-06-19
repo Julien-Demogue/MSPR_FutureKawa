@@ -1,17 +1,109 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Statement } from './statement.entity';
 import { Repository } from 'typeorm';
 import { CreateStatementDto } from './dto/create-statement.dto';
-import { isNullOrEmpty, isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
+import { isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateStatementDto } from './dto/update-statement.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { WarehousesService } from '../warehouses/warehouses.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { sendEmail } from '../utils/email.utils';
+import { Warehouse } from '../warehouses/warehouse.entity';
+import { StatusesService } from '../statuses/statuses.service';
 
 @Injectable()
 export class StatementsService {
-    constructor(@InjectRepository(Statement) private repo: Repository<Statement>, private warehousesService: WarehousesService) { }
+    constructor(
+        @InjectRepository(Statement) private repo: Repository<Statement>,
+        private warehousesService: WarehousesService,
+        @Inject(forwardRef(() => AlertsService)) private alertsService: AlertsService,
+        private statusService: StatusesService
+    ) { }
+
+    async sendAlertOnTemperatureOrHumidityOutOfRange(statement: Statement, warehouse: Warehouse) {
+        const country = warehouse.farm.country;
+
+        const tempIdeal = country.temperature_ideal;
+        const tempTolerance = country.temperature_tolerance_degrees;
+        const maxTemp = tempIdeal + tempTolerance;
+        const minTemp = tempIdeal - tempTolerance;
+        const temperatureValue = statement.temperature;
+
+        const humidityIdeal = country.humidity_ideal;
+        const humidityTolerance = country.humidity_tolerance_percents;
+        const maxHumidity = humidityIdeal + humidityTolerance;
+        const minHumidity = humidityIdeal - humidityTolerance;
+        const humidityValue = statement.humidity;
+
+        let haveAlert = false;
+
+        if (temperatureValue < minTemp || temperatureValue > maxTemp) {
+            haveAlert = true;
+            const subject = 'Temperature Alert';
+            const message = `<p>The temperature of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
+                ` Current temperature: ${temperatureValue}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
+
+            sendEmail(
+                'support.futurekawa@gmail.com', // Replace with the actual recipient email address
+                subject,
+                `<p>${message}</p>`
+            );
+
+            // Create alerts in the database for the temperature issue
+            for (const batch of warehouse.batches) {
+                for (const status of batch.statuses) {
+                    if (status.value === 'OK') { // Only create alerts for statuses that are currently OK
+                        await this.alertsService.create({
+                            value: message,
+                            id_status: status.id,
+                            id_statement: statement.id
+                        });
+                    }
+                }
+            }
+        }
+
+        if (humidityValue < minHumidity || humidityValue > maxHumidity) {
+            haveAlert = true;
+            const subject = 'Humidity Alert';
+            const message = `<p>The humidity of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
+                ` Current humidity: ${humidityValue}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
+
+            sendEmail(
+                'support.futurekawa@gmail.com', // Replace with the actual recipient email address
+                subject,
+                `<p>${message}</p>`
+            );
+
+            // Create alerts in the database for the humidity issue
+            for (const batch of warehouse.batches) {
+                for (const status of batch.statuses) {
+                    if (status.value === 'OK') { // Only create alerts for statuses that are currently OK
+                        await this.statusService.update(status.uuid, { value: 'ALERT' });
+                        await this.alertsService.create({
+                            value: message,
+                            id_status: status.id,
+                            id_statement: statement.id
+                        });
+                    }
+                }
+            }
+        }
+
+        if (!haveAlert) {
+            // Set alerts back to OK
+            for (const batch of warehouse.batches) {
+                for (const status of batch.statuses) {
+                    if (status.value === 'ALERT') {
+                        await this.statusService.update(status.uuid, { value: 'OK' });
+                    }
+                }
+            }
+        }
+    }
+
 
     async create(createStatementDto: CreateStatementDto) {
         if (!isValidNumber(createStatementDto.temperature)) {
@@ -34,6 +126,9 @@ export class StatementsService {
         try {
             const uuid = uuidv4();
             const statement = this.repo.create({ ...createStatementDto, uuid });
+
+            await this.sendAlertOnTemperatureOrHumidityOutOfRange(statement, warehouse);
+
             return await this.repo.save(statement);
         }
         catch (error) {
