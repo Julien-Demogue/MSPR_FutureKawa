@@ -6,10 +6,10 @@ import { Alert } from "../alerts/alert.entity";
 @Entity('statements')
 export class Statement extends DefaultEntity {
     @Column({ type: 'decimal', precision: 5, scale: 2 })
-    temperature!: number;
+    value!: number;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2 })
-    humidity!: number;
+    @Column({ type: 'enum', enum: ['TEMPERATURE', 'HUMIDITY'] })
+    type!: string;
 
     @Column({ name: 'id_warehouse' })
     id_warehouse!: number;

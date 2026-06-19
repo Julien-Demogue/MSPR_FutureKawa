@@ -23,7 +23,7 @@ services:
       - ./bdd_country.sql:/docker-entrypoint-initdb.d/bdd_country.sql
     
   phpmyadmin_country:
-    container_name: phpmyadmin_futurekawa
+    container_name: phpmyadmin_futurekawa_country
     image: phpmyadmin:latest
     environment:
       PMA_HOST: bdd_country
