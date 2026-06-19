@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Status } from './status.entity';
 import { Repository } from 'typeorm';
@@ -11,7 +11,10 @@ import { BatchesService } from '../batches/batches.service';
 
 @Injectable()
 export class StatusesService {
-    constructor(@InjectRepository(Status) private repo: Repository<Status>, private batchesService: BatchesService,) { }
+    constructor(
+        @InjectRepository(Status) private repo: Repository<Status>,
+        @Inject(forwardRef(() => BatchesService)) private batchesService: BatchesService
+    ) { }
     allowedValues = ['OK', 'ALERT', 'EXPIRED', 'SENT', 'DESTROYED'];
 
     async create(createStatusDto: CreateStatusDto) {
