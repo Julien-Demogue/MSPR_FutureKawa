@@ -18,7 +18,7 @@ export class AppController {
     console.log('New MQTT message received :', data);
     try {
       this.statementsService.create({
-        value: Number(data.value),
+        value: Number(data),
         type: 'TEMPERATURE',
         id_warehouse: 1 // For now we only have one warehouse
       });
@@ -33,7 +33,7 @@ export class AppController {
     console.log('New MQTT message received :', data);
     try {
       this.statementsService.create({
-        value: Number(data.value),
+        value: Number(data),
         type: 'HUMIDITY',
         id_warehouse: 1 // For now we only have one warehouse
       });
