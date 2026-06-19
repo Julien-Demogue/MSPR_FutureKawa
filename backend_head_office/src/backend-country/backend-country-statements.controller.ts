@@ -36,7 +36,7 @@ export class BackendCountryStatementsController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch()
     async updateStatement(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -44,7 +44,7 @@ export class BackendCountryStatementsController {
         const response = await axios.patch(url, req.body, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Delete()
     async deleteStatement(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -52,7 +52,7 @@ export class BackendCountryStatementsController {
         const response = await axios.delete(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch('restore')
     async restoreStatement(@Req() req, @Res() res) {
         const uuid = req.query.uuid;

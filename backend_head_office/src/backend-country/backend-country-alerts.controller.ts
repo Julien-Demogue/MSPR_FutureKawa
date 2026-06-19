@@ -13,7 +13,7 @@ export class BackendCountryAlertsController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Post()
     async createAlert(@Req() req, @Res() res) {
         const url = `${alert_url}`;
@@ -36,7 +36,7 @@ export class BackendCountryAlertsController {
         const response = await axios.get(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch()
     async updateAlert(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -44,7 +44,7 @@ export class BackendCountryAlertsController {
         const response = await axios.patch(url, req.body, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Delete()
     async deleteAlert(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -52,7 +52,7 @@ export class BackendCountryAlertsController {
         const response = await axios.delete(url, { headers: default_headers });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
     @Patch('restore')
     async restoreAlert(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
