@@ -36,6 +36,14 @@ export class StatementsController {
         return await this.statementsService.findAll();
     }
 
+    // @Get('/metric')
+    // @ApiBody({ type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
+    // @ApiOperation({ summary: 'Retrieve all statements filtered by metric type' })
+    // @ApiQuery({ name: 'metricType', required: true, type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
+    // async findAllByMetricType(@Query('metricType') metricType: string) {
+    //     return await this.statementsService.findAllByMetricType(metricType);
+    // }
+
     @Get('/uuid')
     @ApiOperation({ summary: 'Retrieve a statement by UUID' })
     @ApiQuery({ name: 'uuid', required: true, type: String })

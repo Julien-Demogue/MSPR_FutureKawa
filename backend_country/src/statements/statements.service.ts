@@ -21,6 +21,7 @@ export class StatementsService {
         @Inject(forwardRef(() => AlertsService)) private alertsService: AlertsService,
         private statusService: StatusesService
     ) { }
+    metricTypes = ['TEMPERATURE', 'HUMIDITY'];
 
     async sendAlertOnTemperatureOrHumidityOutOfRange(statement: Statement, warehouse: Warehouse) {
         const country = warehouse.farm.country;
@@ -140,6 +141,13 @@ export class StatementsService {
     async findAll() {
         return await this.repo.find();
     }
+
+    // async findAllByMetricType(metricType: string) {
+    //     if (!this.metricTypes.includes(metricType)) {
+    //         throw new BadRequestException(ApiResponseMessages.invalidField('metricType'));
+    //     }
+    //     return await this.repo.findBy({ metricType });
+    // }
 
     async findOneByUuid(uuid: string) {
         if (!isValidUuid(uuid)) {
