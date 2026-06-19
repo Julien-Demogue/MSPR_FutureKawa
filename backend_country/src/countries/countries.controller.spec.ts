@@ -163,22 +163,22 @@ describe('CountriesController', () => {
   });
 
   it('PATCH /countries should update a country with a valid uuid', async () => {
-    countriesServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, name: 'Brasil' });
+    countriesServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, name: 'Brazil' });
 
     await request(app.getHttpServer())
       .patch('/countries')
       .query({ uuid: validUuid })
-      .send({ name: 'Brasil' })
+      .send({ name: 'Brazil' })
       .expect(200)
       .expect(({ body }) => {
-        expect(body.name).toBe('Brasil');
+        expect(body.name).toBe('Brazil');
       });
   });
 
   it('PATCH /countries should propagate service internal errors', async () => {
     countriesServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
 
-    await request(app.getHttpServer()).patch('/countries').query({ uuid: validUuid }).send({ name: 'Brasil' }).expect(500);
+    await request(app.getHttpServer()).patch('/countries').query({ uuid: validUuid }).send({ name: 'Brazil' }).expect(500);
   });
 
   it('DELETE /countries should return 400 for an invalid uuid', async () => {
