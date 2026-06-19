@@ -2,10 +2,11 @@ import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { EventPattern } from '@nestjs/microservices/decorators/event-pattern.decorator';
 import { Payload } from '@nestjs/microservices/decorators/payload.decorator';
+import { StatementsService } from './statements/statements.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  constructor(private readonly appService: AppService, private statementsService: StatementsService) { }
 
   @Get()
   getHello(): string {
@@ -15,12 +16,20 @@ export class AppController {
   @EventPattern('temperature')
   handleTemperatureUpdate(@Payload() data: any) {
     console.log('New MQTT message received :', data);
-    // TODO : Add new statement entry for temperature
+    this.statementsService.create({
+      value: Number(data.value),
+      type: 'TEMPERATURE',
+      id_warehouse: 1 // For now we only have one warehouse
+    });
   }
 
   @EventPattern('humidity')
   handleHumidityUpdate(@Payload() data: any) {
     console.log('New MQTT message received :', data);
-    // TODO : Add new statement entry for humidity
+    this.statementsService.create({
+      value: Number(data.value),
+      type: 'HUMIDITY',
+      id_warehouse: 1 // For now we only have one warehouse
+    });
   }
 }
