@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateBatchDto } from './dto/update-batch.dto';
@@ -14,6 +14,7 @@ import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('batches')
 @UseGuards(ServiceAuthGuard)
+@ApiSecurity('api-key-auth')
 @Controller('batches')
 export class BatchesController {
     constructor(private batchesService: BatchesService) { }

@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -14,6 +14,7 @@ import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('alerts')
 @UseGuards(ServiceAuthGuard)
+@ApiSecurity('api-key-auth')
 @Controller('alerts')
 export class AlertsController {
     constructor(private alertsService: AlertsService) { }

@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { WarehousesService } from './warehouses.service';
 import { CreateWarehouseDto } from './dto/create-warehouse.dto';
 import { UpdateWarehouseDto } from './dto/update-warehouse.dto';
@@ -14,6 +14,7 @@ import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('warehouses')
 @UseGuards(ServiceAuthGuard)
+@ApiSecurity('api-key-auth')
 @Controller('warehouses')
 export class WarehousesController {
     constructor(private warehousesService: WarehousesService) { }

@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FarmsService } from './farms.service';
 import { CreateFarmDto } from './dto/create-farm.dto';
 import { UpdateFarmDto } from './dto/update-farm.dto';
@@ -14,6 +14,7 @@ import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
 
 @ApiTags('farms')
 @UseGuards(ServiceAuthGuard)
+@ApiSecurity('api-key-auth')
 @Controller('farms')
 export class FarmsController {
     constructor(private farmsService: FarmsService) { }
