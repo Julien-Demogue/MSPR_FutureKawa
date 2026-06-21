@@ -19,3 +19,7 @@ export function isValidUuid(uuid: string): boolean {
 export function isValidId(id: number | null | undefined): boolean {
     return typeof id === 'number' && !isNaN(id) && id > 0;
 }
+
+export function isValidTimestamp(timestamp: number | null | undefined): boolean {
+    return typeof timestamp === 'number' && !isNaN(timestamp) && timestamp >= 0;
+}

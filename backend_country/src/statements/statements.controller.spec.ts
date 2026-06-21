@@ -72,13 +72,34 @@ describe('StatementsController', () => {
 
   it('GET /statements should return all statements', async () => {
     statementsServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-    await request(app.getHttpServer()).get('/statements').expect(200);
+    await request(app.getHttpServer())
+      .get('/statements')
+      .query({ offset: 0, count: 100 })
+      .expect(200);
   });
 
   it('GET /statements should propagate service internal errors', async () => {
     statementsServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+    await request(app.getHttpServer())
+      .get('/statements')
+      .query({ offset: 0, count: 100 })
+      .expect(500);
+  });
 
-    await request(app.getHttpServer()).get('/statements').expect(500);
+  it('GET /statements/type should return all statements filtered by metric type', async () => {
+    statementsServiceMock.findAllByType.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
+    await request(app.getHttpServer())
+      .get('/statements/type')
+      .query({ type: 'TEMPERATURE', offset: 0, count: 100 })
+      .expect(200);
+  });
+
+  it('GET /statements/type should propagate service internal errors', async () => {
+    statementsServiceMock.findAllByType.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+    await request(app.getHttpServer())
+      .get('/statements/type')
+      .query({ type: 'TEMPERATURE', offset: 0, count: 100 })
+      .expect(500);
   });
 
   it('GET /statements/type should return all statements filtered by metric type', async () => {

@@ -171,16 +171,16 @@ describe('CountriesService', () => {
   });
 
   it('should throw for invalid uuid on update', async () => {
-    await expect(service.update('bad-uuid', { name: 'Brasil' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.update('bad-uuid', { name: 'Brazil' })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should update and return the country', async () => {
     repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
     repoMock.update.mockResolvedValue(undefined);
 
-    const result = await service.update(validUuid, { name: 'Brasil' });
+    const result = await service.update(validUuid, { name: 'Brazil' });
 
-    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { name: 'Brasil' });
+    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { name: 'Brazil' });
     expect(result.uuid).toBe(validUuid);
   });
 
@@ -188,7 +188,7 @@ describe('CountriesService', () => {
     repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
     repoMock.update.mockRejectedValue(new Error('db-error'));
 
-    await expect(service.update(validUuid, { name: 'Brasil' })).rejects.toBeInstanceOf(InternalServerErrorException);
+    await expect(service.update(validUuid, { name: 'Brazil' })).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it('should throw for invalid uuid on remove', async () => {
