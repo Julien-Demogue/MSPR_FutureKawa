@@ -117,153 +117,161 @@ export class StatementsService {
     async create(createStatementDto: CreateStatementDto) {
         if (!isValidNumber(createStatementDto.value)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('value'));
-        }
+            if (!isValidNumber(createStatementDto.value)) {
+                throw new BadRequestException(ApiResponseMessages.invalidField('value'));
+            }
 
-        if (isNullOrEmpty(createStatementDto.type) || !this.metricTypes.includes(createStatementDto.type)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
-        }
+            if (isNullOrEmpty(createStatementDto.type) || !this.metricTypes.includes(createStatementDto.type)) {
+                throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+                if (isNullOrEmpty(createStatementDto.type) || !this.metricTypes.includes(createStatementDto.type)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+                }
 
-        if (!isValidId(createStatementDto.id_warehouse)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
-        }
+                if (!isValidId(createStatementDto.id_warehouse)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
+                }
 
-        const warehouse = await this.warehousesService.findOneById(createStatementDto.id_warehouse);
-        if (!warehouse) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
-        }
+                const warehouse = await this.warehousesService.findOneById(createStatementDto.id_warehouse);
+                if (!warehouse) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
+                }
 
-        try {
-            const uuid = uuidv4();
-            const statement = this.repo.create({ ...createStatementDto, uuid });
-            const savedStatement = await this.repo.save(statement);
+                try {
+                    const uuid = uuidv4();
+                    const statement = this.repo.create({ ...createStatementDto, uuid });
+                    const savedStatement = await this.repo.save(statement);
 
-            await this.sendAlertOnTemperatureOrHumidityOutOfRange(statement, warehouse);
+                    await this.sendAlertOnTemperatureOrHumidityOutOfRange(statement, warehouse);
 
-            return savedStatement;
-        }
-        catch (error) {
-            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
-        }
-    }
+                    return savedStatement;
+                }
+                catch (error) {
+                    throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
+                }
+            }
 
     async findAll(offset: number = 0, count: number = 100) {
-        const skip = isNaN(offset) || offset < 0 ? 0 : offset;
-        const take = isNaN(count) || count < 1 ? 100 : count;
+                const skip = isNaN(offset) || offset < 0 ? 0 : offset;
+                const take = isNaN(count) || count < 1 ? 100 : count;
 
-        return await this.repo.find({
-            skip,
-            take,
-            order: { created_at: 'DESC' }
-        });
-    }
+                return await this.repo.find({
+                    skip,
+                    take,
+                    order: { created_at: 'DESC' }
+                });
+            }
 
     async findAllByType(type: string, offset: number = 0, count: number = 100) {
-        if (!this.metricTypes.includes(type)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
-        }
+                if (!this.metricTypes.includes(type)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+                }
 
-        const skip = isNaN(offset) || offset < 0 ? 0 : offset;
-        const take = isNaN(count) || count < 1 ? 100 : count;
+                const skip = isNaN(offset) || offset < 0 ? 0 : offset;
+                const take = isNaN(count) || count < 1 ? 100 : count;
 
-        return await this.repo.find({
-            where: { type },
-            skip,
-            take,
-            order: { created_at: 'DESC' }
-        });
-    }
+                return await this.repo.find({
+                    where: { type },
+                    skip,
+                    take,
+                    order: { created_at: 'DESC' }
+                });
+            }
 
     async findOneByUuid(uuid: string) {
-        if (!isValidUuid(uuid)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
-        }
+                if (!isValidUuid(uuid)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
+                }
 
-        const statement = await this.repo.findOneBy({ uuid });
-        if (!statement) {
-            throw new BadRequestException(ApiResponseMessages.notFound(Statement));
-        }
-        return statement;
-    }
+                const statement = await this.repo.findOneBy({ uuid });
+                if (!statement) {
+                    throw new BadRequestException(ApiResponseMessages.notFound(Statement));
+                }
+                return statement;
+            }
 
     async findOneById(id: number) {
-        if (!isValidId(id)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('id'));
-        }
+                if (!isValidId(id)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('id'));
+                }
 
-        const statement = await this.repo.findOneBy({ id });
-        if (!statement) {
-            throw new BadRequestException(ApiResponseMessages.notFound(Statement));
-        }
-        return statement;
-    }
+                const statement = await this.repo.findOneBy({ id });
+                if (!statement) {
+                    throw new BadRequestException(ApiResponseMessages.notFound(Statement));
+                }
+                return statement;
+            }
 
     async update(uuid: string, updateStatementDto: UpdateStatementDto) {
-        if (!isValidUuid(uuid)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
-        }
+                if (!isValidUuid(uuid)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
+                }
 
-        if (updateStatementDto.value !== undefined && !isValidNumber(updateStatementDto.value)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('value'));
-        }
+                if (updateStatementDto.value !== undefined && !isValidNumber(updateStatementDto.value)) {
+                    throw new BadRequestException(ApiResponseMessages.invalidField('value'));
+                    if (updateStatementDto.value !== undefined && !isValidNumber(updateStatementDto.value)) {
+                        throw new BadRequestException(ApiResponseMessages.invalidField('value'));
+                    }
 
-        if (updateStatementDto.type !== undefined && (isNullOrEmpty(updateStatementDto.type) || !this.metricTypes.includes(updateStatementDto.type))) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
-        }
+                    if (updateStatementDto.type !== undefined && (isNullOrEmpty(updateStatementDto.type) || !this.metricTypes.includes(updateStatementDto.type))) {
+                        throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+                        if (updateStatementDto.type !== undefined && (isNullOrEmpty(updateStatementDto.type) || !this.metricTypes.includes(updateStatementDto.type))) {
+                            throw new BadRequestException(ApiResponseMessages.invalidField('type'));
+                        }
 
-        if (updateStatementDto.id_warehouse !== undefined) {
-            if (!isValidId(updateStatementDto.id_warehouse)) {
-                throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
-            }
+                        if (updateStatementDto.id_warehouse !== undefined) {
+                            if (!isValidId(updateStatementDto.id_warehouse)) {
+                                throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
+                            }
 
-            const warehouse = await this.warehousesService.findOneById(updateStatementDto.id_warehouse);
-            if (!warehouse) {
-                throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
-            }
-        }
+                            const warehouse = await this.warehousesService.findOneById(updateStatementDto.id_warehouse);
+                            if (!warehouse) {
+                                throw new BadRequestException(ApiResponseMessages.invalidField('id_warehouse'));
+                            }
+                        }
 
-        await this.findOneByUuid(uuid); // Ensure the statement exists before updating
+                        await this.findOneByUuid(uuid); // Ensure the statement exists before updating
 
-        try {
-            await this.repo.update({ uuid }, updateStatementDto);
-            return await this.findOneByUuid(uuid);
-        }
-        catch (error) {
-            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
-        }
-    }
+                        try {
+                            await this.repo.update({ uuid }, updateStatementDto);
+                            return await this.findOneByUuid(uuid);
+                        }
+                        catch (error) {
+                            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
+                        }
+                    }
 
     async remove(uuid: string) {
-        if (!isValidUuid(uuid)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
-        }
+                        if (!isValidUuid(uuid)) {
+                            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
+                        }
 
-        await this.findOneByUuid(uuid); // Ensure the statement exists before deleting
+                        await this.findOneByUuid(uuid); // Ensure the statement exists before deleting
 
-        try {
-            await this.repo.softDelete({ uuid });
-            return;
-        }
-        catch (error) {
-            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
-        }
-    }
+                        try {
+                            await this.repo.softDelete({ uuid });
+                            return;
+                        }
+                        catch (error) {
+                            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
+                        }
+                    }
 
     async restore(uuid: string) {
-        if (!isValidUuid(uuid)) {
-            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
-        }
+                        if (!isValidUuid(uuid)) {
+                            throw new BadRequestException(ApiResponseMessages.invalidField('uuid'));
+                        }
 
-        const existingStatement = await this.repo.findOneBy({ uuid });
-        if (existingStatement) {
-            throw new BadRequestException(ApiResponseMessages.cantRestoreExisting(Statement));
-        }
+                        const existingStatement = await this.repo.findOneBy({ uuid });
+                        if (existingStatement) {
+                            throw new BadRequestException(ApiResponseMessages.cantRestoreExisting(Statement));
+                        }
 
-        try {
-            await this.repo.restore({ uuid });
-            return this.findOneByUuid(uuid);
-        }
-        catch (error) {
-            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
-        }
-    }
-}
+                        try {
+                            await this.repo.restore({ uuid });
+                            return this.findOneByUuid(uuid);
+                        }
+                        catch (error) {
+                            throw new InternalServerErrorException(ApiResponseMessages.internalServerError(Statement, error));
+                        }
+                    }
+                }

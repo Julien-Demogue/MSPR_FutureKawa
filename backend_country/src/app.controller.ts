@@ -13,6 +13,7 @@ export class AppController {
     return this.appService.getHello();
   }
 
+
   @EventPattern('temperature')
   handleTemperatureUpdate(@Payload() data: any) {
     console.log('New MQTT message received :', data);
