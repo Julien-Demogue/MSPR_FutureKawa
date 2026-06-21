@@ -285,4 +285,76 @@ describe('StatementsService', () => {
 
     await expect(service.restore(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
   });
+
+  describe('sendAlertOnTemperatureOrHumidityOutOfRange', () => {
+    let mockWarehouse: any;
+    const sendEmailMock = require('../utils/email.utils').sendEmail;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      sendEmailMock.mockClear();
+      statusesServiceMock.create.mockClear();
+      alertsServiceMock.create.mockClear();
+
+      mockWarehouse = {
+        id: 1,
+        name: 'Warehouse A',
+        farm: { country: { name: 'France', temperature_ideal: 20, temperature_tolerance_degrees: 5, humidity_ideal: 60, humidity_tolerance_percents: 10 } },
+        batches: [{ id: 1, statuses: [{ id: 1, value: 'OK' }] }] // Un lot actuellement sur OK
+      };
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should trigger email and alert for extreme temperature', async () => {
+      const statement = { id: 1, type: 'TEMPERATURE', value: 30 } as Statement;
+      statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
+
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
+      expect(sendEmailMock).toHaveBeenCalledWith(expect.any(String), 'Temperature Alert', expect.stringContaining('30°C'));
+      expect(statusesServiceMock.create).toHaveBeenCalledWith({ value: 'ALERT', id_batch: 1 });
+      expect(alertsServiceMock.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('should trigger email and alert for extreme humidity independently', async () => {
+      const statement = { id: 1, type: 'HUMIDITY', value: 80 } as Statement;
+      statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
+
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
+      expect(sendEmailMock).toHaveBeenCalledWith(expect.any(String), 'Humidity Alert', expect.stringContaining('80%'));
+    });
+
+    it('should respect the 10 minutes email cooldown', async () => {
+      const statement = { id: 1, type: 'TEMPERATURE', value: 30 } as Statement;
+      statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
+
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
+
+      jest.advanceTimersByTime(5 * 60 * 1000);
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
+
+      jest.advanceTimersByTime(6 * 60 * 1000);
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reset batch status to OK when values are normal again', async () => {
+      mockWarehouse.batches[0].statuses = [{ id: 1, value: 'ALERT' }];
+      const statement = { id: 1, type: 'TEMPERATURE', value: 20 } as Statement;
+
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+
+      expect(sendEmailMock).not.toHaveBeenCalled();
+      expect(alertsServiceMock.create).not.toHaveBeenCalled();
+      expect(statusesServiceMock.create).toHaveBeenCalledWith({ value: 'OK', id_batch: 1 });
+    });
+  });
 });

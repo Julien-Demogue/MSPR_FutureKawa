@@ -21,90 +21,98 @@ export class StatementsService {
         @Inject(forwardRef(() => AlertsService)) private alertsService: AlertsService,
         private statusService: StatusesService
     ) { }
-    metricTypes = ['TEMPERATURE', 'HUMIDITY'];
+    private metricTypes = ['TEMPERATURE', 'HUMIDITY'];
+    private lastEmailSentTimes: Map<string, number> = new Map(); // Timestamp of the last email sent for each type of alert
+    private lastAlertCreatedTimes: Map<string, number> = new Map(); // Timestamp of the last alert created for each type of alert
+    private currentMetricStates: Map<string, boolean> = new Map();
 
     async sendAlertOnTemperatureOrHumidityOutOfRange(statement: Statement, warehouse: Warehouse) {
+        const now = Date.now();
+        const emailCooldown = 10 * 60 * 1000; // 10 minutes
+        const alertCooldown = 1 * 60 * 1000; // 1 minute
+
         const country = warehouse.farm.country;
-
-        const tempIdeal = Number(country.temperature_ideal);
-        const tempTolerance = Number(country.temperature_tolerance_degrees);
-        const maxTemp = tempIdeal + tempTolerance;
-        const minTemp = tempIdeal - tempTolerance;
-
-        const humidityIdeal = Number(country.humidity_ideal);
-        const humidityTolerance = Number(country.humidity_tolerance_percents);
-        const maxHumidity = humidityIdeal + humidityTolerance;
-        const minHumidity = humidityIdeal - humidityTolerance;
-
         const value = Number(statement.value);
 
-        let haveAlert = false;
-        if (statement.type === 'TEMPERATURE' && (value < minTemp || value > maxTemp)) {
-            haveAlert = true;
-            const subject = 'Temperature Alert';
-            const message = `<p>The temperature of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
-                ` Current temperature: ${value}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.</p>`;
+        let isOutOfRange = false;
+        let subject = '';
+        let message = '';
 
-            await sendEmail(
-                'support.futurekawa@gmail.com', // Replace with the actual recipient email address
-                subject,
-                `<p>${message}</p>`
-            );
+        if (statement.type === 'TEMPERATURE') {
+            const tempIdeal = Number(country.temperature_ideal);
+            const tempTolerance = Number(country.temperature_tolerance_degrees);
+            const maxTemp = tempIdeal + tempTolerance;
+            const minTemp = tempIdeal - tempTolerance;
 
-            // Create alerts in the database for the temperature issue
-            for (const batch of warehouse.batches) {
-                for (const status of batch.statuses) {
-                    if (status.value === 'OK') { // Only create alerts for statuses that are currently OK
-                        await this.statusService.create({ value: 'ALERT', id_batch: batch.id });
+            if (value < minTemp || value > maxTemp) {
+                isOutOfRange = true;
+                subject = 'Temperature Alert';
+                message = `The temperature of the warehouse ${warehouse.name} in ${country.name} is out of range. Current temperature: ${value}°C. Ideal range: ${minTemp}°C - ${maxTemp}°C.`;
+            }
+        } else if (statement.type === 'HUMIDITY') {
+            const humidityIdeal = Number(country.humidity_ideal);
+            const humidityTolerance = Number(country.humidity_tolerance_percents);
+            const maxHumidity = humidityIdeal + humidityTolerance;
+            const minHumidity = humidityIdeal - humidityTolerance;
+
+            if (value < minHumidity || value > maxHumidity) {
+                isOutOfRange = true;
+                subject = 'Humidity Alert';
+                message = `The humidity of the warehouse ${warehouse.name} in ${country.name} is out of range. Current humidity: ${value}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.`;
+            }
+        }
+
+        const cacheKey = `${warehouse.id}-${statement.type}`; // Unique key for each warehouse and metric type
+        this.currentMetricStates.set(cacheKey, isOutOfRange);
+
+        if (isOutOfRange) {
+            const lastEmailTime = this.lastEmailSentTimes.get(cacheKey) || 0;
+            if ((now - lastEmailTime) >= emailCooldown) {
+                await sendEmail('support.futurekawa@gmail.com', subject, `<p>${message}</p>`);
+                this.lastEmailSentTimes.set(cacheKey, now);
+            }
+
+            const lastAlertTime = this.lastAlertCreatedTimes.get(cacheKey) || 0;
+            if ((now - lastAlertTime) >= alertCooldown) {
+                for (const batch of warehouse.batches) {
+                    const latestStatus = batch.statuses?.length
+                        ? [...batch.statuses].sort((a, b) => b.id - a.id)[0]
+                        : null;
+
+                    if (!latestStatus || latestStatus.value === 'OK') {
+                        const newStatus = await this.statusService.create({ value: 'ALERT', id_batch: batch.id });
                         await this.alertsService.create({
                             value: message,
-                            id_status: status.id,
+                            id_status: newStatus.id,
                             id_statement: statement.id
                         });
                     }
                 }
+                this.lastAlertCreatedTimes.set(cacheKey, now);
             }
-        }
+        } else {
+            // Reset the state for this metric type
+            this.currentMetricStates.delete(cacheKey);
+            this.lastEmailSentTimes.delete(cacheKey);
+            this.lastAlertCreatedTimes.delete(cacheKey);
 
-        if (statement.type === 'HUMIDITY' && (value < minHumidity || value > maxHumidity)) {
-            haveAlert = true;
-            const subject = 'Humidity Alert';
-            const message = `<p>The humidity of the warehouse ${warehouse.name} in ${country.name} is out of range.` +
-                ` Current humidity: ${value}%. Ideal range: ${minHumidity}% - ${maxHumidity}%.</p>`;
+            const otherType = statement.type === 'TEMPERATURE' ? 'HUMIDITY' : 'TEMPERATURE';
+            const otherCacheKey = `${warehouse.id}-${otherType}`;
+            const isOtherMetricBad = this.currentMetricStates.get(otherCacheKey) || false;
 
-            await sendEmail(
-                'support.futurekawa@gmail.com', // Replace with the actual recipient email address
-                subject,
-                `<p>${message}</p>`
-            );
+            if (!isOtherMetricBad) {
+                for (const batch of warehouse.batches) {
+                    const latestStatus = batch.statuses?.length
+                        ? [...batch.statuses].sort((a, b) => b.id - a.id)[0]
+                        : null;
 
-            // Create alerts in the database for the humidity issue
-            for (const batch of warehouse.batches) {
-                for (const status of batch.statuses) {
-                    if (status.value === 'OK') { // Only create alerts for statuses that are currently OK
-                        await this.statusService.create({ value: 'ALERT', id_batch: batch.id });
-                        await this.alertsService.create({
-                            value: message,
-                            id_status: status.id,
-                            id_statement: statement.id
-                        });
-                    }
-                }
-            }
-        }
-
-        if (!haveAlert) {
-            // Set alerts back to OK
-            for (const batch of warehouse.batches) {
-                for (const status of batch.statuses) {
-                    if (status.value === 'ALERT') {
+                    if (latestStatus && latestStatus.value === 'ALERT') {
                         await this.statusService.create({ value: 'OK', id_batch: batch.id });
                     }
                 }
             }
         }
     }
-
 
     async create(createStatementDto: CreateStatementDto) {
         if (!isValidNumber(createStatementDto.value)) {
