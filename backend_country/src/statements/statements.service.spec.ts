@@ -86,12 +86,16 @@ describe('StatementsService', () => {
   });
 
   it('should return all statements filtered by metric type', async () => {
-    repoMock.findBy.mockResolvedValue([{ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1, type: 'TEMPERATURE' }]);
+    repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1, type: 'TEMPERATURE' }]);
 
     const result = await service.findAllByType('TEMPERATURE');
 
     expect(result).toHaveLength(1);
-    expect(repoMock.findBy).toHaveBeenCalledWith({ type: 'TEMPERATURE' });
+    expect(repoMock.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { type: 'TEMPERATURE' }
+      })
+    );
   });
 
   it('should throw for invalid metric type in findAllByType', async () => {

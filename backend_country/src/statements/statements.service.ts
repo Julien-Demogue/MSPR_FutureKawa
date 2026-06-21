@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Statement } from './statement.entity';
 import { Repository } from 'typeorm';
 import { CreateStatementDto } from './dto/create-statement.dto';
-import { isNullOrEmpty, isValidId, isValidNumber, isValidPercent, isValidUuid } from '../utils/fields-validation.utils';
+import { isNullOrEmpty, isValidId, isValidNumber, isValidPercent, isValidTimestamp, isValidUuid } from '../utils/fields-validation.utils';
 import { ApiResponseMessages } from '../utils/api-response-messages.utils';
 import { UpdateStatementDto } from './dto/update-statement.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -138,15 +138,31 @@ export class StatementsService {
         }
     }
 
-    async findAll() {
-        return await this.repo.find();
+    async findAll(offset: number = 0, count: number = 100) {
+        const skip = isNaN(offset) || offset < 0 ? 0 : offset;
+        const take = isNaN(count) || count < 1 ? 100 : count;
+
+        return await this.repo.find({
+            skip,
+            take,
+            order: { created_at: 'DESC' }
+        });
     }
 
-    async findAllByType(type: string) {
+    async findAllByType(type: string, offset: number = 0, count: number = 100) {
         if (!this.metricTypes.includes(type)) {
             throw new BadRequestException(ApiResponseMessages.invalidField('type'));
         }
-        return await this.repo.findBy({ type });
+
+        const skip = isNaN(offset) || offset < 0 ? 0 : offset;
+        const take = isNaN(count) || count < 1 ? 100 : count;
+
+        return await this.repo.find({
+            where: { type },
+            skip,
+            take,
+            order: { created_at: 'DESC' }
+        });
     }
 
     async findOneByUuid(uuid: string) {

@@ -30,17 +30,23 @@ export class StatementsController {
 
     @Get()
     @ApiOperation({ summary: 'Retrieve all statements' })
+    @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Starting offset for pagination (default: 0)', default: 0 })
+    @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of statements to retrieve (default: 100)', default: 100 })
     @CommonApiResponses()
     @ApiFindAllResponses(Statement)
-    async findAll() {
-        return await this.statementsService.findAll();
+    async findAll(@Query('offset', new ParseIntPipe()) offset: number, @Query('count', new ParseIntPipe()) count: number) {
+        return await this.statementsService.findAll(offset, count);
     }
 
     @Get('/type')
     @ApiOperation({ summary: 'Retrieve all statements filtered by metric type' })
     @ApiQuery({ name: 'type', required: true, type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
-    async findAllByType(@Query('type') type: string) {
-        return await this.statementsService.findAllByType(type);
+    @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Starting offset for pagination (default: 0)', default: 0 })
+    @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of statements to retrieve (default: 100)', default: 100 })
+    @CommonApiResponses()
+    @ApiFindAllResponses(Statement)
+    async findAllByType(@Query('type') type: string, @Query('offset', new ParseIntPipe()) offset: number, @Query('count', new ParseIntPipe()) count: number) {
+        return await this.statementsService.findAllByType(type, offset, count);
     }
 
     @Get('/uuid')

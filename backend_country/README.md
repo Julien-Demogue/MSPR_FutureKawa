@@ -2,7 +2,6 @@
 For the first time using this API, you need to follow these steps : 
 - Run `npm install`
 - Create a `.env` file in the root folder with these variables : 
-  - `JWT_SECRET=example_secret` : Secret key used to sign and verify JWT
   - `COUNTRY_API_SECRET=example_secret` : Secret access key used to authenticate API requests
   - `DB_USER=example_username` : Database login
   - `DB_PASSWORD=example_password` : Database password

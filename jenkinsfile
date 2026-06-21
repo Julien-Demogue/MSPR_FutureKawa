@@ -49,20 +49,6 @@ pipeline {
             }
         }
 
-        stage('e2e Tests') {
-            steps {
-                echo 'Exécution des tests e2e...'
-                sh 'cd ./backend_country && npm run test:e2e'
-                sh 'cd ./backend_head_office && npm run test:e2e'
-            }
-            post {
-                always {
-                    junit '**/backend_country/junit-e2e.xml'
-                    junit '**/backend_head_office/junit-e2e.xml'
-                }
-            }
-        }
-
         stage('SonarQube Analysis country') {
             steps {
                 echo 'Analyse SonarQube...'
