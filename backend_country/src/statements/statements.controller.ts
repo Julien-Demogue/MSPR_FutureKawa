@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, ParseIntPipe, ParseUUIDPipe, DefaultValuePipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { StatementsService } from './statements.service';
 import { CreateStatementDto } from './dto/create-statement.dto';
@@ -34,7 +34,10 @@ export class StatementsController {
     @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of statements to retrieve (default: 100)', default: 100 })
     @CommonApiResponses()
     @ApiFindAllResponses(Statement)
-    async findAll(@Query('offset', new ParseIntPipe()) offset: number, @Query('count', new ParseIntPipe()) count: number) {
+    async findAll(
+        @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+        @Query('count', new DefaultValuePipe(100), ParseIntPipe) count: number
+    ) {
         return await this.statementsService.findAll(offset, count);
     }
 
@@ -45,16 +48,12 @@ export class StatementsController {
     @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of statements to retrieve (default: 100)', default: 100 })
     @CommonApiResponses()
     @ApiFindAllResponses(Statement)
-    async findAllByType(@Query('type') type: string, @Query('offset', new ParseIntPipe()) offset: number, @Query('count', new ParseIntPipe()) count: number) {
+    async findAllByType(
+        @Query('type') type: string,
+        @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+        @Query('count', new DefaultValuePipe(100), ParseIntPipe) count: number
+    ) {
         return await this.statementsService.findAllByType(type, offset, count);
-    }
-
-    @Get('/type')
-    @ApiBody({ type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
-    @ApiOperation({ summary: 'Retrieve all statements filtered by metric type' })
-    @ApiQuery({ name: 'type', required: true, type: String, description: 'Metric type to filter by (TEMPERATURE or HUMIDITY)' })
-    async findAllByType(@Query('type') type: string) {
-        return await this.statementsService.findAllByType(type);
     }
 
     @Get('/uuid')

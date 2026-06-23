@@ -28,7 +28,6 @@ describe('StatementsService', () => {
   const repoMock = {
     findOneBy: jest.fn(),
     findBy: jest.fn(),
-    findBy: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
@@ -132,7 +131,6 @@ describe('StatementsService', () => {
     repoMock.save.mockImplementation(async (value) => ({ id: 1, ...value }));
 
     const result = await service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
-    const result = await service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
 
     expect(result.id).toBe(1);
     expect(result.uuid).toBeDefined();
@@ -191,7 +189,6 @@ describe('StatementsService', () => {
     repoMock.save.mockRejectedValue(new Error('db-error'));
 
     await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(InternalServerErrorException);
-    await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it('should throw for invalid uuid in findOneByUuid', async () => {
@@ -205,7 +202,6 @@ describe('StatementsService', () => {
   });
 
   it('should return one statement by uuid', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
     repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
 
     const result = await service.findOneByUuid(validUuid);
@@ -225,7 +221,6 @@ describe('StatementsService', () => {
 
   it('should return one statement by id', async () => {
     repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
 
     const result = await service.findOneById(1);
 
@@ -239,164 +234,152 @@ describe('StatementsService', () => {
 
   it('should throw for invalid type on update', async () => {
     await expect(service.update(validUuid, { type: 'INVALID' })).rejects.toBeInstanceOf(BadRequestException);
-    it('should throw for invalid type on update', async () => {
-      await expect(service.update(validUuid, { type: 'INVALID' })).rejects.toBeInstanceOf(BadRequestException);
-    });
+  });
 
-    it('should throw for invalid id_warehouse on update', async () => {
-      await expect(service.update(validUuid, { id_warehouse: 0 })).rejects.toBeInstanceOf(BadRequestException);
-    });
+  it('should throw for invalid id_warehouse on update', async () => {
+    await expect(service.update(validUuid, { id_warehouse: 0 })).rejects.toBeInstanceOf(BadRequestException);
+  });
 
-    it('should throw when related warehouse is not found on update', async () => {
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
-      warehousesServiceMock.findOneById.mockResolvedValue(null);
+  it('should throw when related warehouse is not found on update', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 });
+    warehousesServiceMock.findOneById.mockResolvedValue(null);
 
-      await expect(service.update(validUuid, { id_warehouse: 2 })).rejects.toBeInstanceOf(BadRequestException);
-    });
+    await expect(service.update(validUuid, { id_warehouse: 2 })).rejects.toBeInstanceOf(BadRequestException);
+  });
 
-    it('should update and return the statement', async () => {
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.update.mockResolvedValue(undefined);
+  it('should update and return the statement', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
+    repoMock.update.mockResolvedValue(undefined);
 
-      const result = await service.update(validUuid, { value: 24.2 });
-      const result = await service.update(validUuid, { value: 24.2 });
+    const result = await service.update(validUuid, { value: 24.2 });
 
-      expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { value: 24.2 });
-      expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { value: 24.2 });
-      expect(result.uuid).toBe(validUuid);
-    });
+    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { value: 24.2 });
+    expect(result.uuid).toBe(validUuid);
+  });
 
-    it('should wrap repository update errors', async () => {
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.update.mockRejectedValue(new Error('db-error'));
+  it('should wrap repository update errors', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
+    repoMock.update.mockRejectedValue(new Error('db-error'));
 
-      await expect(service.update(validUuid, { value: 24.2 })).rejects.toBeInstanceOf(InternalServerErrorException);
-      await expect(service.update(validUuid, { value: 24.2 })).rejects.toBeInstanceOf(InternalServerErrorException);
-    });
+    await expect(service.update(validUuid, { value: 24.2 })).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
 
-    it('should throw for invalid uuid on remove', async () => {
-      await expect(service.remove('bad-uuid')).rejects.toBeInstanceOf(BadRequestException);
-    });
+  it('should throw for invalid uuid on remove', async () => {
+    await expect(service.remove('bad-uuid')).rejects.toBeInstanceOf(BadRequestException);
+  });
 
-    it('should remove an existing statement', async () => {
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.softDelete.mockResolvedValue(undefined);
+  it('should remove an existing statement', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
+    repoMock.softDelete.mockResolvedValue(undefined);
 
-      await expect(service.remove(validUuid)).resolves.toBeUndefined();
-      expect(repoMock.softDelete).toHaveBeenCalledWith({ uuid: validUuid });
-    });
+    await expect(service.remove(validUuid)).resolves.toBeUndefined();
+    expect(repoMock.softDelete).toHaveBeenCalledWith({ uuid: validUuid });
+  });
 
-    it('should wrap repository softDelete errors', async () => {
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.softDelete.mockRejectedValue(new Error('db-error'));
+  it('should wrap repository softDelete errors', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
+    repoMock.softDelete.mockRejectedValue(new Error('db-error'));
 
-      await expect(service.remove(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
-    });
+    await expect(service.remove(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
 
-    it('should throw for invalid uuid on restore', async () => {
-      await expect(service.restore('bad-uuid')).rejects.toBeInstanceOf(BadRequestException);
-    });
+  it('should throw for invalid uuid on restore', async () => {
+    await expect(service.restore('bad-uuid')).rejects.toBeInstanceOf(BadRequestException);
+  });
 
-    it('should throw when trying to restore an existing statement', async () => {
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      await expect(service.restore(validUuid)).rejects.toBeInstanceOf(BadRequestException);
-    });
+  it('should throw when trying to restore an existing statement', async () => {
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
+    await expect(service.restore(validUuid)).rejects.toBeInstanceOf(BadRequestException);
+  });
 
-    it('should restore and return statement when deleted entity exists', async () => {
-      repoMock.findOneBy
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
+  it('should restore and return statement when deleted entity exists', async () => {
+    repoMock.findOneBy
+      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ id: 1, uuid: validUuid, value: 23.5, id_warehouse: 1 });
-      repoMock.restore.mockResolvedValue(undefined);
+    repoMock.restore.mockResolvedValue(undefined);
 
-      const result = await service.restore(validUuid);
+    const result = await service.restore(validUuid);
 
-      expect(repoMock.restore).toHaveBeenCalledWith({ uuid: validUuid });
-      expect(result.uuid).toBe(validUuid);
+    expect(repoMock.restore).toHaveBeenCalledWith({ uuid: validUuid });
+    expect(result.uuid).toBe(validUuid);
+  });
+
+  it('should wrap repository restore errors', async () => {
+    repoMock.findOneBy.mockResolvedValue(null);
+    repoMock.restore.mockRejectedValue(new Error('db-error'));
+
+    await expect(service.restore(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
+
+  describe('sendAlertOnTemperatureOrHumidityOutOfRange', () => {
+    let mockWarehouse: any;
+    const sendEmailMock = require('../utils/email.utils').sendEmail;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      sendEmailMock.mockClear();
+      statusesServiceMock.create.mockClear();
+      alertsServiceMock.create.mockClear();
+
+      mockWarehouse = {
+        id: 1,
+        name: 'Warehouse A',
+        farm: { country: { name: 'France', temperature_ideal: 20, temperature_tolerance_degrees: 5, humidity_ideal: 60, humidity_tolerance_percents: 10 } },
+        batches: [{ id: 1, statuses: [{ id: 1, value: 'OK' }] }] // Un lot actuellement sur OK
+      };
     });
 
-    it('should wrap repository restore errors', async () => {
-      repoMock.findOneBy.mockResolvedValue(null);
-      repoMock.restore.mockRejectedValue(new Error('db-error'));
-
-      await expect(service.restore(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
+    afterEach(() => {
+      jest.useRealTimers();
     });
 
-    describe('sendAlertOnTemperatureOrHumidityOutOfRange', () => {
-      let mockWarehouse: any;
-      const sendEmailMock = require('../utils/email.utils').sendEmail;
+    it('should trigger email and alert for extreme temperature', async () => {
+      const statement = { id: 1, type: 'TEMPERATURE', value: 30 } as Statement;
+      statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
 
-      beforeEach(() => {
-        jest.useFakeTimers();
-        sendEmailMock.mockClear();
-        statusesServiceMock.create.mockClear();
-        alertsServiceMock.create.mockClear();
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
 
-        mockWarehouse = {
-          id: 1,
-          name: 'Warehouse A',
-          farm: { country: { name: 'France', temperature_ideal: 20, temperature_tolerance_degrees: 5, humidity_ideal: 60, humidity_tolerance_percents: 10 } },
-          batches: [{ id: 1, statuses: [{ id: 1, value: 'OK' }] }] // Un lot actuellement sur OK
-        };
-      });
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
+      expect(sendEmailMock).toHaveBeenCalledWith(expect.any(String), 'Temperature Alert', expect.stringContaining('30°C'));
+      expect(statusesServiceMock.create).toHaveBeenCalledWith({ value: 'ALERT', id_batch: 1 });
+      expect(alertsServiceMock.create).toHaveBeenCalledTimes(1);
+    });
 
-      afterEach(() => {
-        jest.useRealTimers();
-      });
+    it('should trigger email and alert for extreme humidity independently', async () => {
+      const statement = { id: 1, type: 'HUMIDITY', value: 80 } as Statement;
+      statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
 
-      it('should trigger email and alert for extreme temperature', async () => {
-        const statement = { id: 1, type: 'TEMPERATURE', value: 30 } as Statement;
-        statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
 
-        await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
+      expect(sendEmailMock).toHaveBeenCalledWith(expect.any(String), 'Humidity Alert', expect.stringContaining('80%'));
+    });
 
-        expect(sendEmailMock).toHaveBeenCalledTimes(1);
-        expect(sendEmailMock).toHaveBeenCalledWith(expect.any(String), 'Temperature Alert', expect.stringContaining('30°C'));
-        expect(statusesServiceMock.create).toHaveBeenCalledWith({ value: 'ALERT', id_batch: 1 });
-        expect(alertsServiceMock.create).toHaveBeenCalledTimes(1);
-      });
+    it('should respect the 10 minutes email cooldown', async () => {
+      const statement = { id: 1, type: 'TEMPERATURE', value: 30 } as Statement;
+      statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
 
-      it('should trigger email and alert for extreme humidity independently', async () => {
-        const statement = { id: 1, type: 'HUMIDITY', value: 80 } as Statement;
-        statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
 
-        await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      jest.advanceTimersByTime(5 * 60 * 1000);
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(1);
 
-        expect(sendEmailMock).toHaveBeenCalledTimes(1);
-        expect(sendEmailMock).toHaveBeenCalledWith(expect.any(String), 'Humidity Alert', expect.stringContaining('80%'));
-      });
+      jest.advanceTimersByTime(6 * 60 * 1000);
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
+      expect(sendEmailMock).toHaveBeenCalledTimes(2);
+    });
 
-      it('should respect the 10 minutes email cooldown', async () => {
-        const statement = { id: 1, type: 'TEMPERATURE', value: 30 } as Statement;
-        statusesServiceMock.create.mockResolvedValue({ id: 2, value: 'ALERT', id_batch: 1 });
+    it('should reset batch status to OK when values are normal again', async () => {
+      mockWarehouse.batches[0].statuses = [{ id: 1, value: 'ALERT' }];
+      const statement = { id: 1, type: 'TEMPERATURE', value: 20 } as Statement;
 
-        await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
-        expect(sendEmailMock).toHaveBeenCalledTimes(1);
+      await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
 
-        jest.advanceTimersByTime(5 * 60 * 1000);
-        await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
-        expect(sendEmailMock).toHaveBeenCalledTimes(1);
-
-        jest.advanceTimersByTime(6 * 60 * 1000);
-        await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
-        expect(sendEmailMock).toHaveBeenCalledTimes(2);
-      });
-
-      it('should reset batch status to OK when values are normal again', async () => {
-        mockWarehouse.batches[0].statuses = [{ id: 1, value: 'ALERT' }];
-        const statement = { id: 1, type: 'TEMPERATURE', value: 20 } as Statement;
-
-        await service.sendAlertOnTemperatureOrHumidityOutOfRange(statement, mockWarehouse);
-
-        expect(sendEmailMock).not.toHaveBeenCalled();
-        expect(alertsServiceMock.create).not.toHaveBeenCalled();
-        expect(statusesServiceMock.create).toHaveBeenCalledWith({ value: 'OK', id_batch: 1 });
-      });
+      expect(sendEmailMock).not.toHaveBeenCalled();
+      expect(alertsServiceMock.create).not.toHaveBeenCalled();
+      expect(statusesServiceMock.create).toHaveBeenCalledWith({ value: 'OK', id_batch: 1 });
     });
   });
+});
