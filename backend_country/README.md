@@ -14,4 +14,3 @@ For the first time using this API, you need to follow these steps :
 - `npm run start` : Starts the production server.
 - `npm run start:dev` : Starts the development server with hot-reload
 - `npm run test` : Runs the unit and integration tests.
-- `npm run test:e2e` :Runs the end-to-end (E2E) tests.
