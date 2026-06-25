@@ -1,3 +1,6 @@
+include:
+  - docker-compose.yml
+  - docker-compose-head-office.yml
 services:
     prometheus:
       image: prom/prometheus:v2.54.1
@@ -31,27 +34,6 @@ services:
       networks:
         - monitoring
 
-    mysql_exporter_country:
-      image: prom/mysqld-exporter:v0.16.0
-      container_name: FuturKawa_mysql_exporter_country
-      restart: unless-stopped
-      ports:
-        - "9104:9104"
-      environment:
-        DATA_SOURCE_NAME: "exporter:exporterpassword@(backend_country:3306)/"
-      networks:
-        - monitoring
-
-    mysql_exporter_head_office:
-      image: prom/mysqld-exporter:v0.16.0
-      container_name: FuturKawa_mysql_exporter_head_office
-      restart: unless-stopped
-      ports:
-        - "9105:9104"
-      environment:
-        DATA_SOURCE_NAME: "exporter:exporterpassword@(backend_head_office:3306)/"
-      networks:
-        - monitoring
 
 volumes:
     prometheus_data:
@@ -59,4 +41,4 @@ volumes:
 
 networks:
     monitoring:
-      driver: bridge
+      external: true

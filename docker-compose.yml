@@ -10,6 +10,8 @@ services:
       - "3000:3000"
     depends_on:
       - bdd_country
+    networks:
+      - monitoring
   bdd_country:
     container_name: bdd_futurekawa_country
     image: mysql:latest
@@ -21,6 +23,8 @@ services:
       - "3306:3306"
     volumes:
       - ./bdd_country.sql:/docker-entrypoint-initdb.d/bdd_country.sql
+    networks:
+      - monitoring
     
   phpmyadmin_country:
     container_name: phpmyadmin_futurekawa_country
@@ -34,7 +38,8 @@ services:
       - "8080:80"
     depends_on:
       - bdd_country
-  
+    networks:
+      - monitoring
   brocker_mosquitto:
     container_name: eddy_brocker
     image: eclipse-mosquitto:2.1.2-alpine
@@ -43,6 +48,24 @@ services:
     volumes:
       - ./iot/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - brocker_data:/mosquitto/data
+    networks:
+      - monitoring
+  
+  mysql_exporter_country:
+    image: prom/mysqld-exporter:v0.14.0
+    container_name: FuturKawa_mysql_exporter_country
+    restart: unless-stopped
+    ports:
+      - "9104:9104"
+    environment:
+      - "DATA_SOURCE_NAME=exporter:exporterpassword@tcp(bdd_country:3306)/"
+    networks:
+      - monitoring
 
 volumes:
   brocker_data:
+
+networks:
+  monitoring:
+    name: monitoring
+    driver: bridge
