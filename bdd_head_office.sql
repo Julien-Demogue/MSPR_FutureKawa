@@ -3,6 +3,10 @@ DROP TABLE IF EXISTS users;
 
 DROP TABLE IF EXISTS roles;
 
+CREATE USER if not EXISTS 'exporter' @'%' IDENTIFIED BY 'exporterpassword'
+WITH
+    MAX_USER_CONNECTIONS 3;
+
 -- ======================
 -- TABLE roles
 -- ======================
