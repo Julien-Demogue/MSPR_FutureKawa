@@ -14,7 +14,6 @@ describe('SettingsService', () => {
       }),
       getOrThrow: jest.fn((key: string) => {
         const values: Record<string, string> = {
-          BASE_URL: 'http://localhost:3000',
           FRONT_URL: 'http://localhost:5173',
           JWT_SECRET: 'test-secret',
         };

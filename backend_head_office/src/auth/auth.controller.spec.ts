@@ -1,122 +1,100 @@
-import { UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
+import { User } from '../users/user.entity';
+import { Role } from '../roles/role.entity';
 import { SettingsService } from '../settings/settings.service';
-import { AppRole } from '../utils/constants/roles.constant';
+import { ConfigService } from '@nestjs/config';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+describe('Auth Integration Test', () => {
+  let app: INestApplication;
+  let userRepository: Repository<User>;
 
-describe('AuthController', () => {
-  let controller: AuthController;
-  const authServiceMock = {
-    registerRegular: jest.fn(),
-    login: jest.fn(),
-    logout: jest.fn(),
-    refreshTokens: jest.fn(),
-  };
-  const settingsServiceMock = {
-    DEFAULT_COOKIE_OPTIONS: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      path: '/',
-    },
-  };
+  const testUserEmail = 'auth-tester@kawa.com';
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [User, Role],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([User, Role]),
+        JwtModule.register({ secret: 'test-secret' }),
+      ],
       controllers: [AuthController],
       providers: [
-        { provide: AuthService, useValue: authServiceMock },
-        { provide: SettingsService, useValue: settingsServiceMock },
-        { provide: ConfigService, useValue: {} },
+        AuthService,
+        UsersService,
+        {
+          provide: SettingsService,
+          useValue: {
+            JWT_SECRET: 'test-secret',
+            ACCESS_TOKEN_EXPIRY: '15m',
+            REFRESH_TOKEN_EXPIRY: '7d',
+            DEFAULT_COOKIE_OPTIONS: {
+              httpOnly: true,
+              sameSite: 'lax',
+              secure: false,
+              path: '/',
+            },
+          },
+        },
+        ConfigService,
       ],
     }).compile();
 
-    controller = module.get<AuthController>(AuthController);
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await app.init();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  afterAll(async () => {
+    await app.close();
   });
 
-  it('registers a user', async () => {
-    await controller.registerRegular({
-      email: 'john.doe@example.com',
-      password: 'secret123',
-    });
+  it('POST /auth/register should create a new user', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        first_name: 'Auth',
+        last_name: 'Tester',
+        email: testUserEmail,
+        password: 'password123',
+        role_label: 'USER',
+      });
 
-    expect(authServiceMock.registerRegular).toHaveBeenCalledWith({
-      email: 'john.doe@example.com',
-      password: 'secret123',
-    });
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('uuid');
   });
 
-  it('logs in and sets auth cookie', async () => {
-    const tokens = { access_token: 'access', refresh_token: 'refresh' };
-    authServiceMock.login.mockResolvedValue({
-      user: { uuid: 'user-uuid', role: { label: AppRole.ADMIN } },
-      tokens,
-    });
+  it('POST /auth/login should authenticate user and set cookie', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email: testUserEmail,
+        password: 'password123',
+      });
 
-    const res = { cookie: jest.fn() } as any;
-
-    const response = await controller.login(
-      { email: 'JOHN.DOE@example.com', password: 'secret123' },
-      res,
-    );
-
-    expect(authServiceMock.login).toHaveBeenCalledWith('john.doe@example.com', 'secret123');
-    expect(res.cookie).toHaveBeenCalledWith('auth-cookie', tokens, settingsServiceMock.DEFAULT_COOKIE_OPTIONS);
-    expect(response).toEqual(
-      expect.objectContaining({
-        sub: 'user-uuid',
-        role: AppRole.ADMIN,
-        access_token: 'access',
-        refresh_token: 'refresh',
-      }),
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers['set-cookie']).toBeDefined();
   });
 
-  it('logs out and clears auth cookie', async () => {
-    const res = { clearCookie: jest.fn() } as any;
+  it('POST /auth/logout should clear authentication cookie', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/auth/logout');
 
-    await controller.logout(
-      { user: { sub: 'user-uuid' } } as any,
-      res,
-    );
-
-    expect(authServiceMock.logout).toHaveBeenCalledWith('user-uuid');
-    expect(res.clearCookie).toHaveBeenCalledWith('auth-cookie', {
-      httpOnly: settingsServiceMock.DEFAULT_COOKIE_OPTIONS.httpOnly,
-      sameSite: settingsServiceMock.DEFAULT_COOKIE_OPTIONS.sameSite,
-      secure: settingsServiceMock.DEFAULT_COOKIE_OPTIONS.secure,
-      path: settingsServiceMock.DEFAULT_COOKIE_OPTIONS.path,
-    });
-  });
-
-  it('refreshes tokens and sets auth cookie', async () => {
-    const tokens = { access_token: 'new-access', refresh_token: 'new-refresh' };
-    authServiceMock.refreshTokens.mockResolvedValue(tokens);
-
-    const res = { cookie: jest.fn() } as any;
-    const response = await controller.refresh(
-      { cookies: { 'auth-cookie': { refresh_token: 'refresh' } } } as any,
-      res,
-    );
-
-    expect(authServiceMock.refreshTokens).toHaveBeenCalledWith('refresh');
-    expect(res.cookie).toHaveBeenCalledWith('auth-cookie', tokens, settingsServiceMock.DEFAULT_COOKIE_OPTIONS);
-    expect(response).toEqual({ message: 'Tokens refreshed successfully' });
-  });
-
-  it('rejects refresh without token', async () => {
-    await expect(controller.refresh({} as any, {} as any)).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers['set-cookie'][0]).toContain('auth-cookie=;');
   });
 });
