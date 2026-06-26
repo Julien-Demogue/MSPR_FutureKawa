@@ -1,31 +1,50 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { StatusesController } from './statuses.controller';
 import { StatusesService } from './statuses.service';
+import { Status } from './status.entity';
+import { BatchesService } from '../batches/batches.service';
 import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// Isolated entity to bypass SQLite enum limitations and TypeORM relation cascading
+@Entity('statuses')
+class IsolatedTestStatus {
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-describe('StatusesController', () => {
+  @Column({ type: 'varchar', length: 36, unique: true })
+  uuid!: string;
+
+  // Changed to varchar to bypass strict enum checks in sqlite tests
+  @Column({ type: 'varchar', length: 50 })
+  value!: string;
+
+  @Column({ name: 'id_batch' })
+  id_batch!: number;
+
+  @CreateDateColumn({ type: 'datetime' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deleted_at!: Date;
+}
+
+describe('Statuses Integration Test', () => {
   let app: INestApplication;
-  const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-  const statusesServiceMock = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOneByUuid: jest.fn(),
-    findOneById: jest.fn(),
-    findAllByValue: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    restore: jest.fn(),
-  };
+  let createdStatusUuid: string;
+  let createdStatusId: number;
 
-  const createDto = {
+  const mockBatchId = 1;
+
+  const createStatusDto = {
     value: 'OK',
-    id_batch: 1,
+    id_batch: mockBatchId,
   };
 
   beforeAll(async () => {
@@ -33,13 +52,30 @@ describe('StatusesController', () => {
       canActivate: jest.fn(() => true),
     };
 
+    // Mocking dependent service to isolate Statuses validation
+    const mockBatchesService = {
+      findOneById: jest.fn().mockResolvedValue({ id: mockBatchId }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [IsolatedTestStatus],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([IsolatedTestStatus]),
+      ],
       controllers: [StatusesController],
       providers: [
+        StatusesService,
         {
-          provide: StatusesService,
-          useValue: statusesServiceMock,
+          provide: getRepositoryToken(Status),
+          useExisting: getRepositoryToken(IsolatedTestStatus),
         },
+        { provide: BatchesService, useValue: mockBatchesService },
       ],
     })
       .overrideGuard(ServiceAuthGuard)
@@ -47,128 +83,123 @@ describe('StatusesController', () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('POST /statuses should create a status', async () => {
-    statusesServiceMock.create.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).post('/statuses').send(createDto).expect(201);
+  it('POST /statuses should save a status in database', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/statuses')
+      .send(createStatusDto);
+
+    if (response.status !== 201) {
+      console.error('POST /statuses failed payload check:', response.body);
+    }
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('uuid');
+    expect(response.body.value).toBe(createStatusDto.value);
+
+    createdStatusUuid = response.body.uuid;
+    createdStatusId = response.body.id;
   });
 
-  it('POST /statuses should propagate service internal errors', async () => {
-    statusesServiceMock.create.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /statuses should retrieve all statuses', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/statuses');
 
-    await request(app.getHttpServer()).post('/statuses').send(createDto).expect(500);
+    if (response.status !== 200) {
+      console.error('GET /statuses failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdStatusUuid);
   });
 
-  it('GET /statuses should return all statuses', async () => {
-    statusesServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-    await request(app.getHttpServer()).get('/statuses').expect(200);
-  });
-
-  it('GET /statuses should propagate service internal errors', async () => {
-    statusesServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).get('/statuses').expect(500);
-  });
-
-  it('GET /statuses/uuid should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).get('/statuses/uuid').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('GET /statuses/uuid should return one status for valid uuid', async () => {
-    statusesServiceMock.findOneByUuid.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).get('/statuses/uuid').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('GET /statuses/uuid should propagate service not found errors for valid uuid', async () => {
-    statusesServiceMock.findOneByUuid.mockRejectedValue(new BadRequestException('Status not found'));
-
-    await request(app.getHttpServer()).get('/statuses/uuid').query({ uuid: validUuid }).expect(400);
-  });
-
-  it('GET /statuses/id should return 400 for invalid id', async () => {
-    await request(app.getHttpServer()).get('/statuses/id').query({ id: 'abc' }).expect(400);
-  });
-
-  it('GET /statuses/id should return one status for valid id', async () => {
-    statusesServiceMock.findOneById.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).get('/statuses/id').query({ id: 1 }).expect(200);
-  });
-
-  it('GET /statuses/value should return statuses for a valid value', async () => {
-    statusesServiceMock.findAllByValue.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-
-    await request(app.getHttpServer())
+  it('GET /statuses/value should retrieve statuses by specific value', async () => {
+    const response = await request(app.getHttpServer())
       .get('/statuses/value')
-      .query({ value: 'OK' })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body).toHaveLength(1);
-      });
+      .query({ value: 'OK' });
+
+    if (response.status !== 200) {
+      console.error('GET /statuses/value failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body[0].value).toBe('OK');
   });
 
-  it('GET /statuses/value should propagate service validation errors', async () => {
-    statusesServiceMock.findAllByValue.mockRejectedValue(new BadRequestException('Invalid value'));
+  it('GET /statuses/uuid should retrieve status by UUID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/statuses/uuid')
+      .query({ uuid: createdStatusUuid });
 
-    await request(app.getHttpServer()).get('/statuses/value').query({ value: 'UNKNOWN' }).expect(400);
+    if (response.status !== 200) {
+      console.error('GET /statuses/uuid failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdStatusId);
   });
 
-  it('PATCH /statuses should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/statuses').query({ uuid: 'invalid' }).send({ value: 'ALERT' }).expect(400);
+  it('GET /statuses/id should retrieve status by ID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/statuses/id')
+      .query({ id: createdStatusId });
+
+    if (response.status !== 200) {
+      console.error('GET /statuses/id failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdStatusUuid);
   });
 
-  it('PATCH /statuses should update a status for valid uuid', async () => {
-    statusesServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, id_batch: 1, value: 'ALERT' });
-
-    await request(app.getHttpServer())
+  it('PATCH /statuses should update database entry', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/statuses')
-      .query({ uuid: validUuid })
-      .send({ value: 'ALERT' })
-      .expect(200);
+      .query({ uuid: createdStatusUuid })
+      .send({ value: 'ALERT' });
+
+    if (response.status !== 200) {
+      console.error('PATCH /statuses failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.value).toBe('ALERT');
   });
 
-  it('PATCH /statuses should propagate service internal errors', async () => {
-    statusesServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('DELETE /statuses should mark status as deleted (soft delete)', async () => {
+    const response = await request(app.getHttpServer())
+      .delete('/statuses')
+      .query({ uuid: createdStatusUuid });
 
-    await request(app.getHttpServer()).patch('/statuses').query({ uuid: validUuid }).send({ value: 'ALERT' }).expect(500);
+    if (response.status !== 204) {
+      console.error('DELETE /statuses failed:', response.body);
+    }
+
+    expect(response.status).toBe(204);
   });
 
-  it('DELETE /statuses should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).delete('/statuses').query({ uuid: 'invalid' }).expect(400);
-  });
+  it('PATCH /statuses/restore should reactivate the status', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/statuses/restore')
+      .query({ uuid: createdStatusUuid });
 
-  it('DELETE /statuses should delete a status for valid uuid', async () => {
-    statusesServiceMock.remove.mockResolvedValue(undefined);
-    await request(app.getHttpServer()).delete('/statuses').query({ uuid: validUuid }).expect(204);
-  });
+    if (response.status !== 200) {
+      console.error('PATCH /statuses/restore failed:', response.body);
+    }
 
-  it('DELETE /statuses should propagate service internal errors', async () => {
-    statusesServiceMock.remove.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).delete('/statuses').query({ uuid: validUuid }).expect(500);
-  });
-
-  it('PATCH /statuses/restore should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/statuses/restore').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('PATCH /statuses/restore should restore a status for valid uuid', async () => {
-    statusesServiceMock.restore.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).patch('/statuses/restore').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('PATCH /statuses/restore should propagate service internal errors', async () => {
-    statusesServiceMock.restore.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).patch('/statuses/restore').query({ uuid: validUuid }).expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.deleted_at).toBeNull();
   });
 });

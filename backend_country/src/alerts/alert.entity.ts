@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { DefaultEntity } from '../utils/default.entity';
+import { DefaultEntity } from '../utils/entities/default.entity';
 import { Status } from '../statuses/status.entity';
 import { Statement } from '../statements/statement.entity';
 

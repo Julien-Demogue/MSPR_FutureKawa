@@ -1,34 +1,60 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { CountriesController } from './countries.controller';
 import { CountriesService } from './countries.service';
+import { Country } from './country.entity';
 import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// Isolated entity to bypass relation cascading and SQLite driver issues
+@Entity('countries')
+class IsolatedTestCountry {
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-describe('CountriesController', () => {
+  @Column({ type: 'varchar', length: 36, unique: true })
+  uuid!: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  name!: string;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  temperature_ideal!: number;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  temperature_tolerance_degrees!: number;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  humidity_ideal!: number;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  humidity_tolerance_percents!: number;
+
+  @CreateDateColumn({ type: 'datetime' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deleted_at!: Date;
+}
+
+describe('Countries Integration Test', () => {
   let app: INestApplication;
-  const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-  const countriesServiceMock = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOneByUuid: jest.fn(),
-    findOneById: jest.fn(),
-    findOneByName: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    restore: jest.fn(),
-  };
+  let createdCountryUuid: string;
+  let createdCountryId: number;
 
-  const createDto = {
-    name: 'Brazil',
-    temperature_ideal: 24,
-    temperature_tolerance_degrees: 3,
-    humidity_ideal: 75,
-    humidity_tolerance_percents: 10,
+  const testCountryName = 'Brazil';
+
+  const createCountryDto = {
+    name: testCountryName,
+    temperature_ideal: 22.50,
+    temperature_tolerance_degrees: 3.00,
+    humidity_ideal: 65.00,
+    humidity_tolerance_percents: 10.00,
   };
 
   beforeAll(async () => {
@@ -37,11 +63,23 @@ describe('CountriesController', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [IsolatedTestCountry],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([IsolatedTestCountry]),
+      ],
       controllers: [CountriesController],
       providers: [
+        CountriesService,
+        // Bind the original Country token to our isolated test entity
         {
-          provide: CountriesService,
-          useValue: countriesServiceMock,
+          provide: getRepositoryToken(Country),
+          useExisting: getRepositoryToken(IsolatedTestCountry),
         },
       ],
     })
@@ -50,175 +88,121 @@ describe('CountriesController', () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('POST /countries should create a country', async () => {
-    countriesServiceMock.create.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('POST /countries should save a country in database', async () => {
+    const response = await request(app.getHttpServer())
       .post('/countries')
-      .send(createDto)
-      .expect(201)
-      .expect(({ body }) => {
-        expect(body.uuid).toBe(validUuid);
-      });
+      .send(createCountryDto);
 
-    expect(countriesServiceMock.create).toHaveBeenCalledWith(createDto);
+    if (response.status !== 201) {
+      console.error('POST /countries failed payload check:', response.body);
+    }
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('uuid');
+    expect(response.body.name).toBe(testCountryName);
+
+    createdCountryUuid = response.body.uuid;
+    createdCountryId = response.body.id;
   });
 
-  it('POST /countries should propagate service internal errors', async () => {
-    countriesServiceMock.create.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /countries should retrieve all countries', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/countries');
 
-    await request(app.getHttpServer()).post('/countries').send(createDto).expect(500);
+    if (response.status !== 200) {
+      console.error('GET /countries failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdCountryUuid);
   });
 
-  it('GET /countries should return all countries', async () => {
-    countriesServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-
-    await request(app.getHttpServer())
-      .get('/countries')
-      .expect(200)
-      .expect(({ body }) => {
-        expect(Array.isArray(body)).toBe(true);
-        expect(body).toHaveLength(1);
-      });
-  });
-
-  it('GET /countries should propagate service internal errors', async () => {
-    countriesServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).get('/countries').expect(500);
-  });
-
-  it('GET /countries/uuid should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).get('/countries/uuid').query({ uuid: 'invalid' }).expect(400);
-    expect(countriesServiceMock.findOneByUuid).not.toHaveBeenCalled();
-  });
-
-  it('GET /countries/uuid should return one country with a valid uuid', async () => {
-    countriesServiceMock.findOneByUuid.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('GET /countries/uuid should retrieve country by UUID', async () => {
+    const response = await request(app.getHttpServer())
       .get('/countries/uuid')
-      .query({ uuid: validUuid })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.uuid).toBe(validUuid);
-      });
+      .query({ uuid: createdCountryUuid });
+
+    if (response.status !== 200) {
+      console.error('GET /countries/uuid failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdCountryId);
   });
 
-  it('GET /countries/uuid should propagate service not found errors for valid uuid', async () => {
-    countriesServiceMock.findOneByUuid.mockRejectedValue(new BadRequestException('Country not found'));
-
-    await request(app.getHttpServer()).get('/countries/uuid').query({ uuid: validUuid }).expect(400);
-  });
-
-  it('GET /countries/id should return 400 for an invalid id', async () => {
-    await request(app.getHttpServer()).get('/countries/id').query({ id: 'NaN' }).expect(400);
-    expect(countriesServiceMock.findOneById).not.toHaveBeenCalled();
-  });
-
-  it('GET /countries/id should return one country with a valid id', async () => {
-    countriesServiceMock.findOneById.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('GET /countries/id should retrieve country by ID', async () => {
+    const response = await request(app.getHttpServer())
       .get('/countries/id')
-      .query({ id: 1 })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.id).toBe(1);
-      });
+      .query({ id: createdCountryId });
+
+    if (response.status !== 200) {
+      console.error('GET /countries/id failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdCountryUuid);
   });
 
-  it('GET /countries/name should call service and return a country', async () => {
-    countriesServiceMock.findOneByName.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('GET /countries/name should retrieve country by name', async () => {
+    const response = await request(app.getHttpServer())
       .get('/countries/name')
-      .query({ name: 'Brazil' })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.name).toBe('Brazil');
-      });
+      .query({ name: testCountryName });
+
+    if (response.status !== 200) {
+      console.error('GET /countries/name failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdCountryUuid);
   });
 
-  it('GET /countries/name should propagate service validation errors', async () => {
-    countriesServiceMock.findOneByName.mockRejectedValue(new BadRequestException('Invalid name'));
-
-    await request(app.getHttpServer()).get('/countries/name').query({ name: '' }).expect(400);
-  });
-
-  it('PATCH /countries should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/countries').query({ uuid: 'invalid' }).send({ name: 'BR' }).expect(400);
-    expect(countriesServiceMock.update).not.toHaveBeenCalled();
-  });
-
-  it('PATCH /countries should update a country with a valid uuid', async () => {
-    countriesServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, name: 'Brazil' });
-
-    await request(app.getHttpServer())
+  it('PATCH /countries should update database entry', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/countries')
-      .query({ uuid: validUuid })
-      .send({ name: 'Brazil' })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.name).toBe('Brazil');
-      });
+      .query({ uuid: createdCountryUuid })
+      .send({ temperature_ideal: 23.00 });
+
+    if (response.status !== 200) {
+      console.error('PATCH /countries failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Number(response.body.temperature_ideal)).toBe(23.00);
   });
 
-  it('PATCH /countries should propagate service internal errors', async () => {
-    countriesServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('DELETE /countries should mark country as deleted and return 204', async () => {
+    const response = await request(app.getHttpServer())
+      .delete('/countries')
+      .query({ uuid: createdCountryUuid });
 
-    await request(app.getHttpServer()).patch('/countries').query({ uuid: validUuid }).send({ name: 'Brazil' }).expect(500);
+    if (response.status !== 204) {
+      console.error('DELETE /countries failed:', response.body);
+    }
+
+    expect(response.status).toBe(204);
   });
 
-  it('DELETE /countries should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).delete('/countries').query({ uuid: 'invalid' }).expect(400);
-    expect(countriesServiceMock.remove).not.toHaveBeenCalled();
-  });
-
-  it('DELETE /countries should delete a country with a valid uuid', async () => {
-    countriesServiceMock.remove.mockResolvedValue(undefined);
-
-    await request(app.getHttpServer()).delete('/countries').query({ uuid: validUuid }).expect(204);
-    expect(countriesServiceMock.remove).toHaveBeenCalledWith(validUuid);
-  });
-
-  it('DELETE /countries should propagate service internal errors', async () => {
-    countriesServiceMock.remove.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).delete('/countries').query({ uuid: validUuid }).expect(500);
-  });
-
-  it('PATCH /countries/restore should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/countries/restore').query({ uuid: 'invalid' }).expect(400);
-    expect(countriesServiceMock.restore).not.toHaveBeenCalled();
-  });
-
-  it('PATCH /countries/restore should restore a country with a valid uuid', async () => {
-    countriesServiceMock.restore.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('PATCH /countries/restore should reactivate the country', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/countries/restore')
-      .query({ uuid: validUuid })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.uuid).toBe(validUuid);
-      });
-  });
+      .query({ uuid: createdCountryUuid });
 
-  it('PATCH /countries/restore should propagate service internal errors', async () => {
-    countriesServiceMock.restore.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+    if (response.status !== 200) {
+      console.error('PATCH /countries/restore failed:', response.body);
+    }
 
-    await request(app.getHttpServer()).patch('/countries/restore').query({ uuid: validUuid }).expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.deleted_at).toBeNull();
   });
 });

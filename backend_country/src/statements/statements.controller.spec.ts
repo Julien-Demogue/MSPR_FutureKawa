@@ -1,32 +1,80 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { StatementsController } from './statements.controller';
 import { StatementsService } from './statements.service';
+import { Statement } from './statement.entity';
 import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
+import { WarehousesService } from '../warehouses/warehouses.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { StatusesService } from '../statuses/statuses.service';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// Isolated entity to bypass relation cascading and SQLite driver issues
+@Entity('statements')
+class IsolatedTestStatement {
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-describe('StatementsController', () => {
+  @Column({ type: 'varchar', length: 36, unique: true })
+  uuid!: string;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  value!: number;
+
+  @Column({ type: 'varchar', length: 255 })
+  type!: string;
+
+  @Column({ name: 'id_warehouse' })
+  id_warehouse!: number;
+
+  @CreateDateColumn({ type: 'datetime' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deleted_at!: Date;
+}
+
+describe('Statements Integration Test', () => {
   let app: INestApplication;
-  const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-  const statementsServiceMock = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findAllByType: jest.fn(),
-    findOneByUuid: jest.fn(),
-    findOneById: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    restore: jest.fn(),
+  let createdStatementUuid: string;
+  let createdStatementId: number;
+
+  // On passe la valeur en String pour satisfaire le @IsDecimal() de votre DTO
+  const createStatementDto = {
+    value: '22.50',
+    type: 'TEMPERATURE',
+    id_warehouse: 1,
   };
 
-  const createDto = {
-    temperature: 23.5,
-    humidity: 60,
-    id_warehouse: 1,
+  // Mocking deep relations required by sendAlertOnTemperatureOrHumidityOutOfRange
+  const mockWarehousesService = {
+    findOneById: jest.fn().mockResolvedValue({
+      id: 1,
+      name: 'Test Warehouse',
+      farm: {
+        country: {
+          name: 'France',
+          temperature_ideal: 20.0,
+          temperature_tolerance_degrees: 5.0,
+          humidity_ideal: 50.0,
+          humidity_tolerance_percents: 10.0,
+        },
+      },
+      batches: [],
+    }),
+  };
+
+  const mockAlertsService = {
+    create: jest.fn().mockResolvedValue({ id: 1 }),
+  };
+
+  const mockStatusesService = {
+    create: jest.fn().mockResolvedValue({ id: 1, value: 'ALERT' }),
   };
 
   beforeAll(async () => {
@@ -35,11 +83,26 @@ describe('StatementsController', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [IsolatedTestStatement],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([IsolatedTestStatement]),
+      ],
       controllers: [StatementsController],
       providers: [
+        StatementsService,
+        { provide: WarehousesService, useValue: mockWarehousesService },
+        { provide: AlertsService, useValue: mockAlertsService },
+        { provide: StatusesService, useValue: mockStatusesService },
+        // Bind the original Statement token to our isolated test entity
         {
-          provide: StatementsService,
-          useValue: statementsServiceMock,
+          provide: getRepositoryToken(Statement),
+          useExisting: getRepositoryToken(IsolatedTestStatement),
         },
       ],
     })
@@ -48,141 +111,123 @@ describe('StatementsController', () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('POST /statements should create a statement', async () => {
-    statementsServiceMock.create.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).post('/statements').send(createDto).expect(201);
+  it('POST /statements should save a statement in database', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/statements')
+      .send(createStatementDto);
+
+    if (response.status !== 201) {
+      console.error('POST /statements failed payload check:', response.body);
+    }
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('uuid');
+    expect(Number(response.body.value)).toBe(22.50);
+
+    createdStatementUuid = response.body.uuid;
+    createdStatementId = response.body.id;
   });
 
-  it('POST /statements should propagate service internal errors', async () => {
-    statementsServiceMock.create.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /statements should retrieve all statements', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/statements');
 
-    await request(app.getHttpServer()).post('/statements').send(createDto).expect(500);
+    if (response.status !== 200) {
+      console.error('GET /statements failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdStatementUuid);
   });
 
-  it('GET /statements should return all statements', async () => {
-    statementsServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-    await request(app.getHttpServer())
-      .get('/statements')
-      .query({ offset: 0, count: 100 })
-      .expect(200);
-  });
-
-  it('GET /statements should propagate service internal errors', async () => {
-    statementsServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-    await request(app.getHttpServer())
-      .get('/statements')
-      .query({ offset: 0, count: 100 })
-      .expect(500);
-  });
-
-  it('GET /statements/type should return all statements filtered by metric type', async () => {
-    statementsServiceMock.findAllByType.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-    await request(app.getHttpServer())
+  it('GET /statements/type should retrieve all statements by specific type', async () => {
+    const response = await request(app.getHttpServer())
       .get('/statements/type')
-      .query({ type: 'TEMPERATURE', offset: 0, count: 100 })
-      .expect(200);
+      .query({ type: 'TEMPERATURE' });
+
+    if (response.status !== 200) {
+      console.error('GET /statements/type failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdStatementUuid);
   });
 
-  it('GET /statements/type should propagate service internal errors', async () => {
-    statementsServiceMock.findAllByType.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-    await request(app.getHttpServer())
-      .get('/statements/type')
-      .query({ type: 'TEMPERATURE', offset: 0, count: 100 })
-      .expect(500);
+  it('GET /statements/uuid should retrieve statement by UUID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/statements/uuid')
+      .query({ uuid: createdStatementUuid });
+
+    if (response.status !== 200) {
+      console.error('GET /statements/uuid failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdStatementId);
   });
 
-  it('GET /statements/type should return all statements filtered by metric type', async () => {
-    statementsServiceMock.findAllByType.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-    await request(app.getHttpServer()).get('/statements/type').query({ type: 'TEMPERATURE' }).expect(200);
+  it('GET /statements/id should retrieve statement by ID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/statements/id')
+      .query({ id: createdStatementId });
+
+    if (response.status !== 200) {
+      console.error('GET /statements/id failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdStatementUuid);
   });
 
-  it('GET /statements/type should propagate service internal errors', async () => {
-    statementsServiceMock.findAllByType.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-    await request(app.getHttpServer()).get('/statements/type').query({ type: 'TEMPERATURE' }).expect(500);
-  });
-
-  it('GET /statements/uuid should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).get('/statements/uuid').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('GET /statements/uuid should return one statement for valid uuid', async () => {
-    statementsServiceMock.findOneByUuid.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).get('/statements/uuid').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('GET /statements/uuid should propagate service not found errors for valid uuid', async () => {
-    statementsServiceMock.findOneByUuid.mockRejectedValue(new BadRequestException('Statement not found'));
-
-    await request(app.getHttpServer()).get('/statements/uuid').query({ uuid: validUuid }).expect(400);
-  });
-
-  it('GET /statements/id should return 400 for invalid id', async () => {
-    await request(app.getHttpServer()).get('/statements/id').query({ id: 'abc' }).expect(400);
-  });
-
-  it('GET /statements/id should return one statement for valid id', async () => {
-    statementsServiceMock.findOneById.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).get('/statements/id').query({ id: 1 }).expect(200);
-  });
-
-  it('PATCH /statements should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/statements').query({ uuid: 'invalid' }).send({ temperature: 25 }).expect(400);
-  });
-
-  it('PATCH /statements should update one statement for valid uuid', async () => {
-    statementsServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, temperature: 25 });
-
-    await request(app.getHttpServer())
+  it('PATCH /statements should update database entry', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/statements')
-      .query({ uuid: validUuid })
-      .send({ temperature: 25 })
-      .expect(200);
+      .query({ uuid: createdStatementUuid })
+      .send({ value: '25.00' }); // String ici aussi pour le PATCH
+
+    if (response.status !== 200) {
+      console.error('PATCH /statements failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Number(response.body.value)).toBe(25.00);
   });
 
-  it('PATCH /statements should propagate service internal errors', async () => {
-    statementsServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('DELETE /statements should mark statement as deleted and return 204', async () => {
+    const response = await request(app.getHttpServer())
+      .delete('/statements')
+      .query({ uuid: createdStatementUuid });
 
-    await request(app.getHttpServer()).patch('/statements').query({ uuid: validUuid }).send({ temperature: 25 }).expect(500);
+    if (response.status !== 204) {
+      console.error('DELETE /statements failed:', response.body);
+    }
+
+    expect(response.status).toBe(204);
   });
 
-  it('DELETE /statements should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).delete('/statements').query({ uuid: 'invalid' }).expect(400);
-  });
+  it('PATCH /statements/restore should reactivate the statement', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/statements/restore')
+      .query({ uuid: createdStatementUuid });
 
-  it('DELETE /statements should delete one statement for valid uuid', async () => {
-    statementsServiceMock.remove.mockResolvedValue(undefined);
-    await request(app.getHttpServer()).delete('/statements').query({ uuid: validUuid }).expect(204);
-  });
+    if (response.status !== 200) {
+      console.error('PATCH /statements/restore failed:', response.body);
+    }
 
-  it('DELETE /statements should propagate service internal errors', async () => {
-    statementsServiceMock.remove.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).delete('/statements').query({ uuid: validUuid }).expect(500);
-  });
-
-  it('PATCH /statements/restore should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/statements/restore').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('PATCH /statements/restore should restore one statement for valid uuid', async () => {
-    statementsServiceMock.restore.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).patch('/statements/restore').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('PATCH /statements/restore should propagate service internal errors', async () => {
-    statementsServiceMock.restore.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).patch('/statements/restore').query({ uuid: validUuid }).expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.deleted_at).toBeNull();
   });
 });

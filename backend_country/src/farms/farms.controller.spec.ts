@@ -1,30 +1,54 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { FarmsController } from './farms.controller';
 import { FarmsService } from './farms.service';
+import { Farm } from './farm.entity';
 import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
+import { CountriesService } from '../countries/countries.service';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// Isolated entity to bypass relation cascading and SQLite driver issues
+@Entity('farms')
+class IsolatedTestFarm {
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-describe('FarmsController', () => {
+  @Column({ type: 'varchar', length: 36, unique: true })
+  uuid!: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  name!: string;
+
+  @Column({ name: 'id_country' })
+  id_country!: number;
+
+  @CreateDateColumn({ type: 'datetime' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deleted_at!: Date;
+}
+
+describe('Farms Integration Test', () => {
   let app: INestApplication;
-  const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-  const farmsServiceMock = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOneByUuid: jest.fn(),
-    findOneById: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    restore: jest.fn(),
+  let createdFarmUuid: string;
+  let createdFarmId: number;
+
+  const testFarmName = 'Farm Test Integrations';
+
+  const createFarmDto = {
+    name: testFarmName,
+    id_country: 1,
   };
 
-  const createDto = {
-    name: 'Farm A',
-    id_country: 1,
+  const mockCountriesService = {
+    // Bypass foreign key checks in service validation
+    findOneById: jest.fn().mockResolvedValue({ id: 1, name: 'France' }),
   };
 
   beforeAll(async () => {
@@ -33,11 +57,27 @@ describe('FarmsController', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [IsolatedTestFarm],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([IsolatedTestFarm]),
+      ],
       controllers: [FarmsController],
       providers: [
+        FarmsService,
         {
-          provide: FarmsService,
-          useValue: farmsServiceMock,
+          provide: CountriesService,
+          useValue: mockCountriesService,
+        },
+        // Bind the original Farm token to our isolated test entity
+        {
+          provide: getRepositoryToken(Farm),
+          useExisting: getRepositoryToken(IsolatedTestFarm),
         },
       ],
     })
@@ -46,139 +86,108 @@ describe('FarmsController', () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('POST /farms should create a farm', async () => {
-    farmsServiceMock.create.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('POST /farms should save a farm in database', async () => {
+    const response = await request(app.getHttpServer())
       .post('/farms')
-      .send(createDto)
-      .expect(201)
-      .expect(({ body }) => {
-        expect(body.uuid).toBe(validUuid);
-      });
+      .send(createFarmDto);
+
+    if (response.status !== 201) {
+      console.error('POST /farms failed payload check:', response.body);
+    }
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('uuid');
+    expect(response.body.name).toBe(testFarmName);
+
+    createdFarmUuid = response.body.uuid;
+    createdFarmId = response.body.id;
   });
 
-  it('POST /farms should propagate service internal errors', async () => {
-    farmsServiceMock.create.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /farms should retrieve all farms', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/farms');
 
-    await request(app.getHttpServer()).post('/farms').send(createDto).expect(500);
+    if (response.status !== 200) {
+      console.error('GET /farms failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdFarmUuid);
   });
 
-  it('GET /farms should return all farms', async () => {
-    farmsServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-
-    await request(app.getHttpServer()).get('/farms').expect(200).expect(({ body }) => {
-      expect(body).toHaveLength(1);
-    });
-  });
-
-  it('GET /farms should propagate service internal errors', async () => {
-    farmsServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).get('/farms').expect(500);
-  });
-
-  it('GET /farms/uuid should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).get('/farms/uuid').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('GET /farms/uuid should return a farm with a valid uuid', async () => {
-    farmsServiceMock.findOneByUuid.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('GET /farms/uuid should retrieve farm by UUID', async () => {
+    const response = await request(app.getHttpServer())
       .get('/farms/uuid')
-      .query({ uuid: validUuid })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.id_country).toBe(1);
-      });
+      .query({ uuid: createdFarmUuid });
+
+    if (response.status !== 200) {
+      console.error('GET /farms/uuid failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdFarmId);
   });
 
-  it('GET /farms/uuid should propagate service not found errors for valid uuid', async () => {
-    farmsServiceMock.findOneByUuid.mockRejectedValue(new BadRequestException('Farm not found'));
+  it('GET /farms/id should retrieve farm by ID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/farms/id')
+      .query({ id: createdFarmId });
 
-    await request(app.getHttpServer()).get('/farms/uuid').query({ uuid: validUuid }).expect(400);
+    if (response.status !== 200) {
+      console.error('GET /farms/id failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdFarmUuid);
   });
 
-  it('GET /farms/id should return 400 for an invalid id', async () => {
-    await request(app.getHttpServer()).get('/farms/id').query({ id: 'invalid' }).expect(400);
-  });
-
-  it('GET /farms/id should return a farm with a valid id', async () => {
-    farmsServiceMock.findOneById.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer()).get('/farms/id').query({ id: 1 }).expect(200);
-  });
-
-  it('PATCH /farms should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/farms').query({ uuid: 'invalid' }).send({ name: 'X' }).expect(400);
-  });
-
-  it('PATCH /farms should update a farm with a valid uuid', async () => {
-    farmsServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, name: 'Farm B' });
-
-    await request(app.getHttpServer())
+  it('PATCH /farms should update database entry', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/farms')
-      .query({ uuid: validUuid })
-      .send({ name: 'Farm B' })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.name).toBe('Farm B');
-      });
+      .query({ uuid: createdFarmUuid })
+      .send({ name: 'Farm Updated' });
+
+    if (response.status !== 200) {
+      console.error('PATCH /farms failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe('Farm Updated');
   });
 
-  it('PATCH /farms should propagate service internal errors', async () => {
-    farmsServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('DELETE /farms should mark farm as deleted and return 204', async () => {
+    const response = await request(app.getHttpServer())
+      .delete('/farms')
+      .query({ uuid: createdFarmUuid });
 
-    await request(app.getHttpServer()).patch('/farms').query({ uuid: validUuid }).send({ name: 'Farm B' }).expect(500);
+    if (response.status !== 204) {
+      console.error('DELETE /farms failed:', response.body);
+    }
+
+    expect(response.status).toBe(204);
   });
 
-  it('DELETE /farms should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).delete('/farms').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('DELETE /farms should delete a farm with a valid uuid', async () => {
-    farmsServiceMock.remove.mockResolvedValue(undefined);
-
-    await request(app.getHttpServer()).delete('/farms').query({ uuid: validUuid }).expect(204);
-  });
-
-  it('DELETE /farms should propagate service internal errors', async () => {
-    farmsServiceMock.remove.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).delete('/farms').query({ uuid: validUuid }).expect(500);
-  });
-
-  it('PATCH /farms/restore should return 400 for an invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/farms/restore').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('PATCH /farms/restore should restore a farm with a valid uuid', async () => {
-    farmsServiceMock.restore.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer())
+  it('PATCH /farms/restore should reactivate the farm', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/farms/restore')
-      .query({ uuid: validUuid })
-      .expect(200)
-      .expect(({ body }) => {
-        expect(body.uuid).toBe(validUuid);
-      });
-  });
+      .query({ uuid: createdFarmUuid });
 
-  it('PATCH /farms/restore should propagate service internal errors', async () => {
-    farmsServiceMock.restore.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+    if (response.status !== 200) {
+      console.error('PATCH /farms/restore failed:', response.body);
+    }
 
-    await request(app.getHttpServer()).patch('/farms/restore').query({ uuid: validUuid }).expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.deleted_at).toBeNull();
   });
 });

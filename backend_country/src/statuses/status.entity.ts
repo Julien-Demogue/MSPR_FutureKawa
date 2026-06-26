@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
-import { DefaultEntity } from "../utils/default.entity";
+import { DefaultEntity } from '../utils/entities/default.entity';
 import { Batch } from "../batches/batch.entity";
 import { Alert } from "../alerts/alert.entity";
 
