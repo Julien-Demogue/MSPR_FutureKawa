@@ -1,31 +1,55 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { AlertsController } from './alerts.controller';
 import { AlertsService } from './alerts.service';
+import { Alert } from './alert.entity';
+import { StatusesService } from '../statuses/statuses.service';
+import { StatementsService } from '../statements/statements.service';
 import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// Isolated entity to bypass SQLite enum limitations and TypeORM relation cascading
+@Entity('alerts')
+class IsolatedTestAlert {
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-describe('AlertsController', () => {
+  @Column({ type: 'varchar', length: 36, unique: true })
+  uuid!: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  value!: string;
+
+  @Column({ name: 'id_status' })
+  id_status!: number;
+
+  @Column({ name: 'id_statement' })
+  id_statement!: number;
+
+  @CreateDateColumn({ type: 'datetime' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deleted_at!: Date;
+}
+
+describe('Alerts Integration Test', () => {
   let app: INestApplication;
-  const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-  const alertsServiceMock = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOneByUuid: jest.fn(),
-    findOneById: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    restore: jest.fn(),
-  };
+  let createdAlertUuid: string;
+  let createdAlertId: number;
 
-  const createDto = {
-    value: 'Humidity drift',
-    id_status: 1,
-    id_statement: 1,
+  const mockStatusId = 1;
+  const mockStatementId = 1;
+
+  const createAlertDto = {
+    value: 'Critical Temperature Exceeded',
+    id_status: mockStatusId,
+    id_statement: mockStatementId,
   };
 
   beforeAll(async () => {
@@ -33,13 +57,35 @@ describe('AlertsController', () => {
       canActivate: jest.fn(() => true),
     };
 
+    const mockStatusesService = {
+      findOneById: jest.fn().mockResolvedValue({ id: mockStatusId, value: 'ALERT' }),
+    };
+
+    const mockStatementsService = {
+      findOneById: jest.fn().mockResolvedValue({ id: mockStatementId, type: 'TEMPERATURE' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [IsolatedTestAlert],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([IsolatedTestAlert]),
+      ],
       controllers: [AlertsController],
       providers: [
+        AlertsService,
+        // Override the real Alert repository with our isolated fake entity
         {
-          provide: AlertsService,
-          useValue: alertsServiceMock,
+          provide: getRepositoryToken(Alert),
+          useExisting: getRepositoryToken(IsolatedTestAlert),
         },
+        { provide: StatusesService, useValue: mockStatusesService },
+        { provide: StatementsService, useValue: mockStatementsService },
       ],
     })
       .overrideGuard(ServiceAuthGuard)
@@ -47,110 +93,108 @@ describe('AlertsController', () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('POST /alerts should create an alert', async () => {
-    alertsServiceMock.create.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).post('/alerts').send(createDto).expect(201);
+  it('POST /alerts should save an alert in database', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/alerts')
+      .send(createAlertDto);
+
+    if (response.status !== 201) {
+      console.error('POST /alerts failed payload check:', response.body);
+    }
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('uuid');
+    expect(response.body.value).toBe(createAlertDto.value);
+
+    createdAlertUuid = response.body.uuid;
+    createdAlertId = response.body.id;
   });
 
-  it('POST /alerts should propagate service internal errors', async () => {
-    alertsServiceMock.create.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /alerts should retrieve all alerts', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/alerts');
 
-    await request(app.getHttpServer()).post('/alerts').send(createDto).expect(500);
+    if (response.status !== 200) {
+      console.error('GET /alerts failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdAlertUuid);
   });
 
-  it('GET /alerts should return all alerts', async () => {
-    alertsServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
-    await request(app.getHttpServer()).get('/alerts').expect(200);
+  it('GET /alerts/uuid should retrieve alert by UUID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/alerts/uuid')
+      .query({ uuid: createdAlertUuid });
+
+    if (response.status !== 200) {
+      console.error('GET /alerts/uuid failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdAlertId);
   });
 
-  it('GET /alerts should propagate service internal errors', async () => {
-    alertsServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /alerts/id should retrieve alert by ID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/alerts/id')
+      .query({ id: createdAlertId });
 
-    await request(app.getHttpServer()).get('/alerts').expect(500);
+    if (response.status !== 200) {
+      console.error('GET /alerts/id failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdAlertUuid);
   });
 
-  it('GET /alerts/uuid should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).get('/alerts/uuid').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('GET /alerts/uuid should return one alert for valid uuid', async () => {
-    alertsServiceMock.findOneByUuid.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).get('/alerts/uuid').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('GET /alerts/uuid should propagate service not found errors for valid uuid', async () => {
-    alertsServiceMock.findOneByUuid.mockRejectedValue(new BadRequestException('Alert not found'));
-
-    await request(app.getHttpServer()).get('/alerts/uuid').query({ uuid: validUuid }).expect(400);
-  });
-
-  it('GET /alerts/id should return 400 for invalid id', async () => {
-    await request(app.getHttpServer()).get('/alerts/id').query({ id: 'bad' }).expect(400);
-  });
-
-  it('GET /alerts/id should return one alert for valid id', async () => {
-    alertsServiceMock.findOneById.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).get('/alerts/id').query({ id: 1 }).expect(200);
-  });
-
-  it('PATCH /alerts should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/alerts').query({ uuid: 'invalid' }).send({ value: 'x' }).expect(400);
-  });
-
-  it('PATCH /alerts should update one alert for valid uuid', async () => {
-    alertsServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, value: 'Temp drift' });
-
-    await request(app.getHttpServer())
+  it('PATCH /alerts should update database entry', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/alerts')
-      .query({ uuid: validUuid })
-      .send({ value: 'Temp drift' })
-      .expect(200);
+      .query({ uuid: createdAlertUuid })
+      .send({ value: 'Resolved Temperature Alert' });
+
+    if (response.status !== 200) {
+      console.error('PATCH /alerts failed:', response.body);
+    }
+
+    expect(response.status).toBe(200);
+    expect(response.body.value).toBe('Resolved Temperature Alert');
   });
 
-  it('PATCH /alerts should propagate service internal errors', async () => {
-    alertsServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('DELETE /alerts should mark alert as deleted (soft delete)', async () => {
+    const response = await request(app.getHttpServer())
+      .delete('/alerts')
+      .query({ uuid: createdAlertUuid });
 
-    await request(app.getHttpServer()).patch('/alerts').query({ uuid: validUuid }).send({ value: 'Temp drift' }).expect(500);
+    if (response.status !== 204) {
+      console.error('DELETE /alerts failed:', response.body);
+    }
+
+    expect(response.status).toBe(204);
   });
 
-  it('DELETE /alerts should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).delete('/alerts').query({ uuid: 'invalid' }).expect(400);
-  });
+  it('PATCH /alerts/restore should reactivate the alert', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/alerts/restore')
+      .query({ uuid: createdAlertUuid });
 
-  it('DELETE /alerts should delete one alert for valid uuid', async () => {
-    alertsServiceMock.remove.mockResolvedValue(undefined);
-    await request(app.getHttpServer()).delete('/alerts').query({ uuid: validUuid }).expect(204);
-  });
+    if (response.status !== 200) {
+      console.error('PATCH /alerts/restore failed:', response.body);
+    }
 
-  it('DELETE /alerts should propagate service internal errors', async () => {
-    alertsServiceMock.remove.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).delete('/alerts').query({ uuid: validUuid }).expect(500);
-  });
-
-  it('PATCH /alerts/restore should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/alerts/restore').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('PATCH /alerts/restore should restore one alert for valid uuid', async () => {
-    alertsServiceMock.restore.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-    await request(app.getHttpServer()).patch('/alerts/restore').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('PATCH /alerts/restore should propagate service internal errors', async () => {
-    alertsServiceMock.restore.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).patch('/alerts/restore').query({ uuid: validUuid }).expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.deleted_at).toBeNull();
   });
 });

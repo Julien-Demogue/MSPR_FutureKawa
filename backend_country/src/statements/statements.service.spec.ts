@@ -84,7 +84,6 @@ describe('StatementsService', () => {
 
   it('should return all statements', async () => {
     repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 }]);
-    repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 }]);
 
     const result = await service.findAll();
 
@@ -138,23 +137,19 @@ describe('StatementsService', () => {
 
   it('should throw for invalid temperature value', async () => {
     await expect(service.create({ value: NaN, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
-    await expect(service.create({ value: NaN, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw for invalid humidity value', async () => {
     await expect(service.create({ value: NaN, type: 'HUMIDITY', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
-    await expect(service.create({ value: NaN, type: 'HUMIDITY', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw for invalid id_warehouse on create', async () => {
-    await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 0 })).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 0 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should throw when related warehouse is not found on create', async () => {
     warehousesServiceMock.findOneById.mockResolvedValue(null);
 
-    await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.create({ value: 23.5, type: 'TEMPERATURE', id_warehouse: 1 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -228,7 +223,6 @@ describe('StatementsService', () => {
   });
 
   it('should throw for invalid uuid on update', async () => {
-    await expect(service.update('bad-uuid', { value: 24.2 })).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.update('bad-uuid', { value: 24.2 })).rejects.toBeInstanceOf(BadRequestException);
   });
 

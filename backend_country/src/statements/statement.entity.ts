@@ -1,4 +1,4 @@
-import { DefaultEntity } from "../utils/default.entity";
+import { DefaultEntity } from '../utils/entities/default.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Warehouse } from "../warehouses/warehouse.entity";
 import { Alert } from "../alerts/alert.entity";

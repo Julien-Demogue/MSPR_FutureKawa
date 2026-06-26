@@ -29,6 +29,7 @@
     "@nestjs/swagger": "^11.2.7",
     "@nestjs/typeorm": "^11.0.1",
     "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "mqtt": "^5.15.1",
@@ -63,6 +64,7 @@
     "jest-junit": "^17.0.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
+    "sqlite3": "^5.1.7",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
@@ -90,6 +92,9 @@
     "reporters": [
       "default",
       "jest-junit"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!uuid)"
     ]
   }
 }

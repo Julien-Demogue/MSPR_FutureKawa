@@ -16,7 +16,6 @@ export class AppController {
 
   @EventPattern('temperature')
   handleTemperatureUpdate(@Payload() data: any) {
-    console.log('New MQTT message received :', data);
     try {
       this.statementsService.create({
         value: Number(data),
@@ -31,7 +30,6 @@ export class AppController {
 
   @EventPattern('humidity')
   handleHumidityUpdate(@Payload() data: any) {
-    console.log('New MQTT message received :', data);
     try {
       this.statementsService.create({
         value: Number(data),

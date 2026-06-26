@@ -8,7 +8,6 @@ export class SettingsService {
   TESTING: boolean;
 
   // URL settings
-  readonly BASE_URL: string;
   readonly FRONT_URL: string;
   readonly GLOBAL_PREFIX = '';
 
@@ -25,7 +24,6 @@ export class SettingsService {
   constructor(private readonly config: ConfigService) {
     // Initialisez les propriétés dans le constructeur
     this.TESTING = this.config.get<string>("TESTING") === "true";
-    this.BASE_URL = this.config.getOrThrow<string>("BASE_URL");
     this.FRONT_URL = this.config.getOrThrow<string>("FRONT_URL");
     this.JWT_SECRET = this.config.getOrThrow("JWT_SECRET");
 

@@ -1,10 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDecimal, IsEnum, IsNumber } from "class-validator";
+import { IsEnum, IsNumber } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class CreateStatementDto {
 
-    @ApiProperty()
-    @IsDecimal({ decimal_digits: '5,2' })
+    @ApiProperty({ type: 'number', description: 'Sensor captor value. Accepts numbers or strings representing numbers' })
+    @Transform(({ value }) => (typeof value === 'string' ? Number(value) : value))
+    @IsNumber()
     value!: number;
 
     @ApiProperty()

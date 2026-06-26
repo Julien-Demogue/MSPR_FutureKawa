@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany } from 'typeorm';
-import { DefaultEntity } from '../utils/default.entity';
+import { DefaultEntity } from '../utils/entities/default.entity';
 import { Farm } from '../farms/farm.entity';
 
 @Entity('countries')

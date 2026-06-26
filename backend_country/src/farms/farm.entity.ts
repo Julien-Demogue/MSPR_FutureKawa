@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { DefaultEntity } from '../utils/default.entity';
+import { DefaultEntity } from '../utils/entities/default.entity';
 import { Country } from '../countries/country.entity';
 import { Warehouse } from '../warehouses/warehouse.entity';
 

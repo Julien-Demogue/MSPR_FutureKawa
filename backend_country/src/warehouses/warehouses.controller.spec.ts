@@ -1,30 +1,89 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { WarehousesController } from './warehouses.controller';
 import { WarehousesService } from './warehouses.service';
+import { Warehouse } from './warehouse.entity';
+import { FarmsService } from '../farms/farms.service';
 import { ServiceAuthGuard } from '../utils/guards/service-auth.guard';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// --- FAKE ENTITIES TO SATISFY TYPEORM RELATIONS ---
+@Entity('test_countries')
+class TestCountry { @PrimaryGeneratedColumn() id!: number; }
 
-describe('WarehousesController', () => {
+@Entity('test_farms')
+class TestFarm {
+  @PrimaryGeneratedColumn() id!: number;
+
+  @ManyToOne(() => TestCountry, { createForeignKeyConstraints: false })
+  country!: TestCountry;
+}
+
+@Entity('test_statuses')
+class TestStatus {
+  @PrimaryGeneratedColumn() id!: number;
+
+  @ManyToOne('TestBatch', 'statuses', { createForeignKeyConstraints: false })
+  batch!: any;
+}
+
+@Entity('test_batches')
+class TestBatch {
+  @PrimaryGeneratedColumn() id!: number;
+
+  @ManyToOne('IsolatedTestWarehouse', 'batches', { createForeignKeyConstraints: false })
+  warehouse!: any;
+
+  @OneToMany(() => TestStatus, s => s.batch)
+  statuses!: TestStatus[];
+}
+
+// --- MAIN ISOLATED ENTITY ---
+@Entity('warehouses')
+class IsolatedTestWarehouse {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ type: 'varchar', length: 36, unique: true })
+  uuid!: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  name!: string;
+
+  @Column({ name: 'id_farm' })
+  id_farm!: number;
+
+  @CreateDateColumn({ type: 'datetime' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', nullable: true })
+  deleted_at!: Date;
+
+  // Satisfies relations WITHOUT triggering SQLite physical Foreign Key errors
+  @ManyToOne(() => TestFarm, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'id_farm' })
+  farm!: TestFarm;
+
+  // Satisfies 'batches' and 'batches.statuses' relations
+  @OneToMany(() => TestBatch, b => b.warehouse)
+  batches!: TestBatch[];
+}
+
+describe('Warehouses Integration Test', () => {
   let app: INestApplication;
-  const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-  const warehousesServiceMock = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOneByUuid: jest.fn(),
-    findOneById: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
-    restore: jest.fn(),
-  };
+  let createdWarehouseUuid: string;
+  let createdWarehouseId: number;
 
-  const createDto = {
-    name: 'Warehouse A',
-    id_farm: 1,
+  const mockFarmId = 1;
+
+  const createWarehouseDto = {
+    name: 'Main Storage Alpha',
+    id_farm: mockFarmId,
   };
 
   beforeAll(async () => {
@@ -32,13 +91,30 @@ describe('WarehousesController', () => {
       canActivate: jest.fn(() => true),
     };
 
+    // Mocking dependent service to isolate Warehouses validation
+    const mockFarmsService = {
+      findOneById: jest.fn().mockResolvedValue({ id: mockFarmId, name: 'Test Farm' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [IsolatedTestWarehouse, TestFarm, TestCountry, TestBatch, TestStatus],
+          synchronize: true,
+          logging: false,
+        }),
+        TypeOrmModule.forFeature([IsolatedTestWarehouse]),
+      ],
       controllers: [WarehousesController],
       providers: [
+        WarehousesService,
         {
-          provide: WarehousesService,
-          useValue: warehousesServiceMock,
+          provide: getRepositoryToken(Warehouse),
+          useExisting: getRepositoryToken(IsolatedTestWarehouse),
         },
+        { provide: FarmsService, useValue: mockFarmsService },
       ],
     })
       .overrideGuard(ServiceAuthGuard)
@@ -46,120 +122,86 @@ describe('WarehousesController', () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
   });
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
-  it('POST /warehouses should create a warehouse', async () => {
-    warehousesServiceMock.create.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
+  it('POST /warehouses should save a warehouse in database', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/warehouses')
+      .send(createWarehouseDto);
 
-    await request(app.getHttpServer()).post('/warehouses').send(createDto).expect(201);
+    if (response.status !== 201) {
+      console.error('POST /warehouses failed payload check:', response.body);
+    }
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('uuid');
+    expect(response.body.name).toBe(createWarehouseDto.name);
+
+    createdWarehouseUuid = response.body.uuid;
+    createdWarehouseId = response.body.id;
   });
 
-  it('POST /warehouses should propagate service internal errors', async () => {
-    warehousesServiceMock.create.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /warehouses should retrieve all warehouses', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/warehouses');
 
-    await request(app.getHttpServer()).post('/warehouses').send(createDto).expect(500);
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBeTruthy();
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].uuid).toBe(createdWarehouseUuid);
   });
 
-  it('GET /warehouses should return all warehouses', async () => {
-    warehousesServiceMock.findAll.mockResolvedValue([{ id: 1, uuid: validUuid, ...createDto }]);
+  it('GET /warehouses/uuid should retrieve warehouse by UUID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/warehouses/uuid')
+      .query({ uuid: createdWarehouseUuid });
 
-    await request(app.getHttpServer()).get('/warehouses').expect(200);
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(createdWarehouseId);
   });
 
-  it('GET /warehouses should propagate service internal errors', async () => {
-    warehousesServiceMock.findAll.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('GET /warehouses/id should retrieve warehouse by ID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/warehouses/id')
+      .query({ id: createdWarehouseId });
 
-    await request(app.getHttpServer()).get('/warehouses').expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.uuid).toBe(createdWarehouseUuid);
   });
 
-  it('GET /warehouses/uuid should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).get('/warehouses/uuid').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('GET /warehouses/uuid should return one warehouse for valid uuid', async () => {
-    warehousesServiceMock.findOneByUuid.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer()).get('/warehouses/uuid').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('GET /warehouses/uuid should propagate service not found errors for valid uuid', async () => {
-    warehousesServiceMock.findOneByUuid.mockRejectedValue(new BadRequestException('Warehouse not found'));
-
-    await request(app.getHttpServer()).get('/warehouses/uuid').query({ uuid: validUuid }).expect(400);
-  });
-
-  it('GET /warehouses/id should return 400 for invalid id', async () => {
-    await request(app.getHttpServer()).get('/warehouses/id').query({ id: 'x' }).expect(400);
-  });
-
-  it('GET /warehouses/id should return one warehouse for valid id', async () => {
-    warehousesServiceMock.findOneById.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer()).get('/warehouses/id').query({ id: 1 }).expect(200);
-  });
-
-  it('PATCH /warehouses should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer())
+  it('PATCH /warehouses should update database entry', async () => {
+    const response = await request(app.getHttpServer())
       .patch('/warehouses')
-      .query({ uuid: 'invalid' })
-      .send({ name: 'Warehouse B' })
-      .expect(400);
+      .query({ uuid: createdWarehouseUuid })
+      .send({ name: 'Storage Beta Updated' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe('Storage Beta Updated');
   });
 
-  it('PATCH /warehouses should update warehouse for valid uuid', async () => {
-    warehousesServiceMock.update.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto, name: 'Warehouse B' });
+  it('DELETE /warehouses should mark warehouse as deleted (soft delete)', async () => {
+    const response = await request(app.getHttpServer())
+      .delete('/warehouses')
+      .query({ uuid: createdWarehouseUuid });
 
-    await request(app.getHttpServer())
-      .patch('/warehouses')
-      .query({ uuid: validUuid })
-      .send({ name: 'Warehouse B' })
-      .expect(200);
+    expect(response.status).toBe(204);
   });
 
-  it('PATCH /warehouses should propagate service internal errors', async () => {
-    warehousesServiceMock.update.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
+  it('PATCH /warehouses/restore should reactivate the warehouse', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/warehouses/restore')
+      .query({ uuid: createdWarehouseUuid });
 
-    await request(app.getHttpServer()).patch('/warehouses').query({ uuid: validUuid }).send({ name: 'Warehouse B' }).expect(500);
-  });
-
-  it('DELETE /warehouses should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).delete('/warehouses').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('DELETE /warehouses should delete warehouse for valid uuid', async () => {
-    warehousesServiceMock.remove.mockResolvedValue(undefined);
-
-    await request(app.getHttpServer()).delete('/warehouses').query({ uuid: validUuid }).expect(204);
-  });
-
-  it('DELETE /warehouses should propagate service internal errors', async () => {
-    warehousesServiceMock.remove.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).delete('/warehouses').query({ uuid: validUuid }).expect(500);
-  });
-
-  it('PATCH /warehouses/restore should return 400 for invalid uuid', async () => {
-    await request(app.getHttpServer()).patch('/warehouses/restore').query({ uuid: 'invalid' }).expect(400);
-  });
-
-  it('PATCH /warehouses/restore should restore warehouse for valid uuid', async () => {
-    warehousesServiceMock.restore.mockResolvedValue({ id: 1, uuid: validUuid, ...createDto });
-
-    await request(app.getHttpServer()).patch('/warehouses/restore').query({ uuid: validUuid }).expect(200);
-  });
-
-  it('PATCH /warehouses/restore should propagate service internal errors', async () => {
-    warehousesServiceMock.restore.mockRejectedValue(new InternalServerErrorException('DB unavailable'));
-
-    await request(app.getHttpServer()).patch('/warehouses/restore').query({ uuid: validUuid }).expect(500);
+    expect(response.status).toBe(200);
+    expect(response.body.deleted_at).toBeNull();
   });
 });

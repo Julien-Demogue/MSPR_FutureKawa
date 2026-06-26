@@ -7,12 +7,12 @@ export abstract class DefaultEntity extends BaseEntity {
     @Column({ type: 'uuid', unique: true })
     uuid!: string;
 
-    @CreateDateColumn({ type: 'timestamp' })
+    @CreateDateColumn({ type: 'datetime' })
     created_at!: Date;
 
-    @UpdateDateColumn({ type: 'timestamp' })
+    @UpdateDateColumn({ type: 'datetime' })
     updated_at!: Date;
 
-    @DeleteDateColumn({ type: 'timestamp', nullable: true })
+    @DeleteDateColumn({ type: 'datetime', nullable: true })
     deleted_at?: Date;
 }
