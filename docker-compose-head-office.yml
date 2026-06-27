@@ -2,6 +2,7 @@ services:
   # frontend:
   backend_head_office:
     container_name: backend_futurekawa_head_office
+    restart: unless-stopped
     build:
       context: ./backend_head_office
       dockerfile: Dockerfile
@@ -16,6 +17,7 @@ services:
 
   bdd_head_office:
     container_name: bdd_futurekawa_head_office
+    restart: unless-stopped
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -30,6 +32,7 @@ services:
 
   phpmyadmin_head_office:
     container_name: phpmyadmin_futurekawa_head_office
+    restart: unless-stopped
     image: phpmyadmin:latest
     environment:
       PMA_HOST: bdd_head_office

@@ -1,6 +1,7 @@
 services:
   backend_country:
     container_name: backend_futurekawa_country
+    restart: unless-stopped
     build:
       context: ./backend_country
       dockerfile: Dockerfile
@@ -14,6 +15,7 @@ services:
       - monitoring
   bdd_country:
     container_name: bdd_futurekawa_country
+    restart: unless-stopped
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -28,6 +30,7 @@ services:
     
   phpmyadmin_country:
     container_name: phpmyadmin_futurekawa_country
+    restart: unless-stopped
     image: phpmyadmin:latest
     environment:
       PMA_HOST: bdd_country
@@ -42,6 +45,7 @@ services:
       - monitoring
   brocker_mosquitto:
     container_name: eddy_brocker
+    restart: unless-stopped
     image: eclipse-mosquitto:2.1.2-alpine
     ports:
       - "1883:1883"
