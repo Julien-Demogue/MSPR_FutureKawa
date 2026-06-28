@@ -29,7 +29,7 @@ else:
 
 
 # get ipv4 in a terminal with ipconfig
-mqtt_server = "10.72.51.67"
+mqtt_server = ""
 port_server = 1883
 
 # Accessibility test to port 1883 :

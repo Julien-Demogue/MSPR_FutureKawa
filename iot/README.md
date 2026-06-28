@@ -9,7 +9,7 @@ Avant de lancer le script, modifie les variables suivantes dans [main.py](main.p
 ```python
 SSID = ""
 PASSWORD = ""
-mqtt_server = "10.72.51.67"
+mqtt_server = ""
 port_server = 1883
 ```
 
@@ -22,8 +22,8 @@ Renseigne :
 ## Prérequis
 
 - Un microcontrôleur ESP32
-- Un capteur DHT11 branché sur la broche GPIO 32
-- Le driver USB-to-UART Silicon Labs : https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads
+- Un capteur DHT11 branché sur la broche GPIO 32 -- si autre a modifier dans le programme
+- Le driver USB-to-UART Silicon Labs : https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads prendre le universel
 - L'IDE Thonny
 
 ## Installation
@@ -43,4 +43,4 @@ Renseigne :
 
 ## Attention
 
-Ne pas écraser `root.py`.
+Ne pas écraser `boot.py`.
