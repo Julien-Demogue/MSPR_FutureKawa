@@ -12,6 +12,10 @@ DROP TABLE IF EXISTS farms;
 
 DROP TABLE IF EXISTS countries;
 
+CREATE USER if not EXISTS 'exporter' @'%' IDENTIFIED BY 'exporterpassword'
+WITH
+    MAX_USER_CONNECTIONS 3;
+
 -- ======================
 -- TABLE countries
 -- ======================

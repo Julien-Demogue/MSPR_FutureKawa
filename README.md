@@ -19,6 +19,7 @@
 Run the following commands:
 - `docker compose -f docker-compose.yml up -d`
 - `docker compose -f docker-compose-head-office.yml up -d`
+- `docker compose -f docker-compose-monitoring.yml up -d` <-- run others compose files
 
 
 ## Information about APIs
