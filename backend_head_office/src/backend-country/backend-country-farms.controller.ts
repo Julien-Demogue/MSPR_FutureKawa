@@ -7,21 +7,21 @@ import { farm_url, getDefaultHeaders } from '../utils/constants/backend-country.
 // FARMS
 @Controller("backend_country/farms")
 export class BackendCountryFarmsController {
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get()
     async getFarms(@Res() res) {
         const url = `${farm_url}`;
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Post()
     async createFarm(@Req() req, @Res() res) {
         const url = `${farm_url}`;
         const response = await axios.post(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('uuid')
     async getFarmByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -29,7 +29,7 @@ export class BackendCountryFarmsController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('id')
     async getFarmById(@Req() req, @Res() res) {
         const id = req.query.id;
@@ -37,7 +37,7 @@ export class BackendCountryFarmsController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Patch()
     async updateFarm(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -45,7 +45,7 @@ export class BackendCountryFarmsController {
         const response = await axios.patch(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Delete()
     async deleteFarm(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -53,7 +53,7 @@ export class BackendCountryFarmsController {
         const response = await axios.delete(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Patch('restore')
     async restoreFarm(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
