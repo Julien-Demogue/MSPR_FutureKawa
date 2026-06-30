@@ -7,21 +7,21 @@ import { batch_url, getDefaultHeaders } from '../utils/constants/backend-country
 // BATCHES
 @Controller("backend_country/batches")
 export class BackendCountryBatchesController {
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get()
     async getBatches(@Res() res) {
         const url = `${batch_url}`;
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Post()
     async createBatch(@Req() req, @Res() res) {
         const url = `${batch_url}`;
         const response = await axios.post(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('uuid')
     async getBatchByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -29,7 +29,7 @@ export class BackendCountryBatchesController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('id')
     async getBatchById(@Req() req, @Res() res) {
         const id = req.query.id;
@@ -37,7 +37,7 @@ export class BackendCountryBatchesController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Patch()
     async updateBatch(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -45,7 +45,7 @@ export class BackendCountryBatchesController {
         const response = await axios.patch(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Delete()
     async deleteBatch(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -53,7 +53,7 @@ export class BackendCountryBatchesController {
         const response = await axios.delete(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.ADMIN, AppRole.SUPERADMIN)
+    @Guard(AppRole.ADMIN)
     @Patch('restore')
     async restoreBatch(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
