@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { compare } from "bcrypt";
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
@@ -122,11 +122,11 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(email.toLowerCase());
 
     if (!user) {
-      throw new Error('EmailNoUserError');
+      throw new UnauthorizedException('EmailNoUserError');
     }
 
     if (!(await compare(password, user.password))) {
-      throw new Error('InvalidPwError');
+      throw new UnauthorizedException('InvalidPwError');
     }
 
     return user;
@@ -144,7 +144,7 @@ export class AuthService {
       const user = await this.usersService.findOneByUuid(payload.sub)
 
       if (user.refresh_token !== refreshToken) {
-        throw new Error('InvalidRefreshTokenError');
+        throw new UnauthorizedException('InvalidRefreshTokenError');
       }
 
       return this.getTokens({
@@ -152,7 +152,7 @@ export class AuthService {
         role_label: user.role.label,
       });
     } catch (error) {
-      throw new Error('InvalidRefreshTokenError');
+      throw new UnauthorizedException('InvalidRefreshTokenError');
     }
   }
 

@@ -10,6 +10,7 @@ import { SettingsModule } from './settings/settings.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { BackendCountryModule } from './backend-country/backend-country.module';
+import { AdminSeeder } from './seeds/admin.seeder';
 
 @Module({
   imports: [
@@ -34,6 +35,6 @@ import { BackendCountryModule } from './backend-country/backend-country.module';
     BackendCountryModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AdminSeeder],
 })
 export class AppModule { }

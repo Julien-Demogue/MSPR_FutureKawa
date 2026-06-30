@@ -68,7 +68,7 @@ describe('FarmsService', () => {
       id_country: 1,
     };
 
-    countriesServiceMock.findOneById.mockResolvedValue({ id: 1, name: 'Brazil' });
+    countriesServiceMock.findOneById.mockResolvedValue({ id: 1, name: 'Brasil' });
     repoMock.create.mockImplementation((value) => value);
     repoMock.save.mockImplementation(async (value) => ({ id: 1, ...value }));
 
@@ -94,7 +94,7 @@ describe('FarmsService', () => {
   });
 
   it('should wrap repository save errors on create', async () => {
-    countriesServiceMock.findOneById.mockResolvedValue({ id: 1, name: 'Brazil' });
+    countriesServiceMock.findOneById.mockResolvedValue({ id: 1, name: 'Brasil' });
     repoMock.create.mockImplementation((value) => value);
     repoMock.save.mockRejectedValue(new Error('db-error'));
 

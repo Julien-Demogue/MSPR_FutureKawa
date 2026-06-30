@@ -47,7 +47,7 @@ describe('Countries Integration Test', () => {
   let createdCountryUuid: string;
   let createdCountryId: number;
 
-  const testCountryName = 'Brazil';
+  const testCountryName = 'Brasil';
 
   const createCountryDto = {
     name: testCountryName,

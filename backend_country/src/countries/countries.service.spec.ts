@@ -46,7 +46,7 @@ describe('CountriesService', () => {
   });
 
   it('should return all countries', async () => {
-    repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, name: 'Brazil' }]);
+    repoMock.find.mockResolvedValue([{ id: 1, uuid: validUuid, name: 'Brasil' }]);
 
     const result = await service.findAll();
 
@@ -56,7 +56,7 @@ describe('CountriesService', () => {
 
   it('should create a country when payload is valid', async () => {
     const payload = {
-      name: 'Brazil',
+      name: 'Brasil',
       temperature_ideal: 24,
       temperature_tolerance_degrees: 3,
       humidity_ideal: 70,
@@ -70,7 +70,7 @@ describe('CountriesService', () => {
     const result = await service.create(payload);
 
     expect(result.id).toBe(1);
-    expect(result.name).toBe('Brazil');
+    expect(result.name).toBe('Brasil');
     expect(result.uuid).toBeDefined();
   });
 
@@ -87,11 +87,11 @@ describe('CountriesService', () => {
   });
 
   it('should throw for duplicate country name', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 5, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 5, name: 'Brasil' });
 
     await expect(
       service.create({
-        name: 'Brazil',
+        name: 'Brasil',
         temperature_ideal: 24,
         temperature_tolerance_degrees: 3,
         humidity_ideal: 70,
@@ -107,7 +107,7 @@ describe('CountriesService', () => {
 
     await expect(
       service.create({
-        name: 'Brazil',
+        name: 'Brasil',
         temperature_ideal: 24,
         temperature_tolerance_degrees: 3,
         humidity_ideal: 70,
@@ -127,7 +127,7 @@ describe('CountriesService', () => {
   });
 
   it('should return one country by uuid', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
 
     const result = await service.findOneByUuid(validUuid);
 
@@ -145,7 +145,7 @@ describe('CountriesService', () => {
   });
 
   it('should return one country by id', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
 
     const result = await service.findOneById(1);
 
@@ -159,36 +159,36 @@ describe('CountriesService', () => {
   it('should throw when country name is not found', async () => {
     repoMock.findOneBy.mockResolvedValue(null);
 
-    await expect(service.findOneByName('Brazil')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.findOneByName('Brasil')).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should return one country by name', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
 
-    const result = await service.findOneByName('Brazil');
+    const result = await service.findOneByName('Brasil');
 
-    expect(result.name).toBe('Brazil');
+    expect(result.name).toBe('Brasil');
   });
 
   it('should throw for invalid uuid on update', async () => {
-    await expect(service.update('bad-uuid', { name: 'Brazil' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.update('bad-uuid', { name: 'Brasil' })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should update and return the country', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
     repoMock.update.mockResolvedValue(undefined);
 
-    const result = await service.update(validUuid, { name: 'Brazil' });
+    const result = await service.update(validUuid, { name: 'Brasil' });
 
-    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { name: 'Brazil' });
+    expect(repoMock.update).toHaveBeenCalledWith({ uuid: validUuid }, { name: 'Brasil' });
     expect(result.uuid).toBe(validUuid);
   });
 
   it('should wrap repository update errors', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
     repoMock.update.mockRejectedValue(new Error('db-error'));
 
-    await expect(service.update(validUuid, { name: 'Brazil' })).rejects.toBeInstanceOf(InternalServerErrorException);
+    await expect(service.update(validUuid, { name: 'Brasil' })).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it('should throw for invalid uuid on remove', async () => {
@@ -196,7 +196,7 @@ describe('CountriesService', () => {
   });
 
   it('should remove an existing country', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
     repoMock.softDelete.mockResolvedValue(undefined);
 
     await expect(service.remove(validUuid)).resolves.toBeUndefined();
@@ -204,7 +204,7 @@ describe('CountriesService', () => {
   });
 
   it('should wrap repository softDelete errors', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
     repoMock.softDelete.mockRejectedValue(new Error('db-error'));
 
     await expect(service.remove(validUuid)).rejects.toBeInstanceOf(InternalServerErrorException);
@@ -215,13 +215,13 @@ describe('CountriesService', () => {
   });
 
   it('should throw when trying to restore an existing country', async () => {
-    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValue({ id: 1, uuid: validUuid, name: 'Brasil' });
 
     await expect(service.restore(validUuid)).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should restore and return country when deleted entity exists', async () => {
-    repoMock.findOneBy.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 1, uuid: validUuid, name: 'Brazil' });
+    repoMock.findOneBy.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 1, uuid: validUuid, name: 'Brasil' });
     repoMock.restore.mockResolvedValue(undefined);
 
     const result = await service.restore(validUuid);
