@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "FutureKawa",
+    "logout": "Déconnexion",
+    "loading": "Chargement de l'espace FutureKawa...",
+    "unknownRole": "Rôle inconnu : contactez un administrateur.",
+    "you": "Vous",
+    "user": "Utilisateur",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "selectPlaceholder": "Sélectionner...",
+    "historyRange": {
+      "label": "Période",
+      "1d": "Dernières 24h",
+      "7d": "7 derniers jours",
+      "60d": "60 derniers jours"
+    }
+  },
+  "nav": {
+    "overview": "Vue d'ensemble",
+    "stocks": "Stocks",
+    "history": "Historique",
+    "alerts": "Alertes",
+    "users": "Utilisateurs"
+  },
+  "roles": {
+    "ADMIN": "Administrateur",
+    "DIRECTION": "Direction",
+    "BRAZIL": "Brésil",
+    "ECUADOR": "Équateur",
+    "COLOMBIA": "Colombie"
+  },
+  "status": {
+    "normal": "Normal",
+    "alert": "Alerte"
+  },
+  "alertReasons": {
+    "outOfTolerance": "Conditions hors tolérance (température/humidité)",
+    "tooOld": "Stockage > {{days}} jours"
+  },
+  "login": {
+    "title": "FutureKawa",
+    "subtitle": "Portail d'administration et de supervision",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion...",
+    "error": "Email ou mot de passe incorrect."
+  },
+  "admin": {
+    "title": "Gestion des Utilisateurs",
+    "teamTitle": "Équipe FutureKawa",
+    "teamSubtitle": "Gérez les accès et les rôles de vos collaborateurs.",
+    "newUser": "+ Nouvel Utilisateur",
+    "loadError": "Impossible de charger les utilisateurs.",
+    "loadingUsers": "Chargement des collaborateurs...",
+    "colName": "Nom complet",
+    "colEmail": "Email",
+    "colRole": "Rôle",
+    "colActions": "Actions",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+    "deleteError": "Erreur lors de la suppression.",
+    "roleUpdateError": "Erreur lors de la mise à jour du rôle.",
+    "createError": "Erreur lors de la création de l'utilisateur.",
+    "roleRequired": "Merci de sélectionner un rôle.",
+    "unknownRoleSuffix": "(inconnu)",
+    "modalTitle": "Ajouter un utilisateur",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "tempPassword": "Mot de passe provisoire",
+    "initialRole": "Rôle initial",
+    "createAccount": "Créer le compte",
+    "creating": "Création..."
+  },
+  "overview": {
+    "title": "Gestion des stocks",
+    "titleWithCountry": "Gestion des stocks — {{country}}",
+    "country": "Pays",
+    "warehouse": "Entrepôt",
+    "allCountries": "Tous les pays",
+    "allCountriesLabel": "Tous pays",
+    "allWarehouses": "Tous les entrepôts",
+    "lotCount_one": "{{count}} lot",
+    "lotCount_other": "{{count}} lots",
+    "noLots": "Aucun lot pour cette sélection.",
+    "selectLotPrompt": "Sélectionnez un lot pour voir le détail.",
+    "temperature": "Température",
+    "humidity": "Humidité",
+    "weight": "Poids",
+    "storedOn": "Stocké le",
+    "temperatureChart": "Température (°C)",
+    "humidityChart": "Humidité (%)",
+    "criticalBanner_one": "{{count}} lot en alerte —",
+    "criticalBanner_other": "{{count}} lots en alerte —"
+  },
+  "stocksPage": {
+    "title": "Stocks",
+    "allLots": "Tous les lots",
+    "lotCount_one": "{{count}} lot",
+    "lotCount_other": "{{count}} lots",
+    "sortByDate": "Trier par date (FIFO)",
+    "sortByStatus": "Trier par statut",
+    "sortById": "Trier par ID",
+    "colId": "ID Lot",
+    "colCountry": "Pays",
+    "colWarehouse": "Entrepôt",
+    "colVariety": "Variété",
+    "colDate": "Date stockage",
+    "colStatus": "Statut",
+    "colWeight": "Quantité (kg)"
+  },
+  "alertsPage": {
+    "title": "Alertes",
+    "activeCount_one": "{{count}} lot en alerte actuellement.",
+    "activeCount_other": "{{count}} lots en alerte actuellement.",
+    "noAlerts": "Aucune alerte active actuellement.",
+    "storedOn": "Stocké le"
+  },
+  "historyPage": {
+    "title": "Historique",
+    "lotLabel": "Lot",
+    "noLots": "Aucun lot disponible.",
+    "storedOn": "Stocké le",
+    "temperature": "Température (°C)",
+    "humidity": "Humidité (%)"
+  }
+}

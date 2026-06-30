@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "FutureKawa",
+    "logout": "Log out",
+    "loading": "Loading FutureKawa workspace...",
+    "unknownRole": "Unknown role: please contact an administrator.",
+    "you": "You",
+    "user": "User",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "selectPlaceholder": "Select...",
+    "historyRange": {
+      "label": "Range",
+      "1d": "Last 24 hours",
+      "7d": "Last 7 days",
+      "60d": "Last 60 days"
+    }
+  },
+  "nav": {
+    "overview": "Overview",
+    "stocks": "Stocks",
+    "history": "History",
+    "alerts": "Alerts",
+    "users": "Users"
+  },
+  "roles": {
+    "ADMIN": "Administrator",
+    "DIRECTION": "Direction",
+    "BRAZIL": "Brazil",
+    "ECUADOR": "Ecuador",
+    "COLOMBIA": "Colombia"
+  },
+  "status": {
+    "normal": "Normal",
+    "alert": "Alert"
+  },
+  "alertReasons": {
+    "outOfTolerance": "Conditions out of tolerance (temperature/humidity)",
+    "tooOld": "Stored for over {{days}} days"
+  },
+  "login": {
+    "title": "FutureKawa",
+    "subtitle": "Administration and monitoring portal",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "error": "Incorrect email or password."
+  },
+  "admin": {
+    "title": "User Management",
+    "teamTitle": "FutureKawa Team",
+    "teamSubtitle": "Manage your team's access and roles.",
+    "newUser": "+ New User",
+    "loadError": "Unable to load users.",
+    "loadingUsers": "Loading team members...",
+    "colName": "Full name",
+    "colEmail": "Email",
+    "colRole": "Role",
+    "colActions": "Actions",
+    "deleteConfirm": "Are you sure you want to delete this user?",
+    "deleteError": "Error while deleting the user.",
+    "roleUpdateError": "Error while updating the role.",
+    "createError": "Error while creating the user.",
+    "roleRequired": "Please select a role.",
+    "unknownRoleSuffix": "(unknown)",
+    "modalTitle": "Add a user",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "tempPassword": "Temporary password",
+    "initialRole": "Initial role",
+    "createAccount": "Create account",
+    "creating": "Creating..."
+  },
+  "overview": {
+    "title": "Stock management",
+    "titleWithCountry": "Stock management — {{country}}",
+    "country": "Country",
+    "warehouse": "Warehouse",
+    "allCountries": "All countries",
+    "allCountriesLabel": "All countries",
+    "allWarehouses": "All warehouses",
+    "lotCount_one": "{{count}} lot",
+    "lotCount_other": "{{count}} lots",
+    "noLots": "No lots for this selection.",
+    "selectLotPrompt": "Select a lot to see details.",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "weight": "Weight",
+    "storedOn": "Stored on",
+    "temperatureChart": "Temperature (°C)",
+    "humidityChart": "Humidity (%)",
+    "criticalBanner_one": "{{count}} lot in alert —",
+    "criticalBanner_other": "{{count}} lots in alert —"
+  },
+  "stocksPage": {
+    "title": "Stocks",
+    "allLots": "All lots",
+    "lotCount_one": "{{count}} lot",
+    "lotCount_other": "{{count}} lots",
+    "sortByDate": "Sort by date (FIFO)",
+    "sortByStatus": "Sort by status",
+    "sortById": "Sort by ID",
+    "colId": "Lot ID",
+    "colCountry": "Country",
+    "colWarehouse": "Warehouse",
+    "colVariety": "Variety",
+    "colDate": "Storage date",
+    "colStatus": "Status",
+    "colWeight": "Quantity (kg)"
+  },
+  "alertsPage": {
+    "title": "Alerts",
+    "activeCount_one": "{{count}} lot currently in alert.",
+    "activeCount_other": "{{count}} lots currently in alert.",
+    "noAlerts": "No active alerts right now. ✅",
+    "storedOn": "Stored on"
+  },
+  "historyPage": {
+    "title": "History",
+    "lotLabel": "Lot",
+    "noLots": "No lots available.",
+    "storedOn": "Stored on",
+    "temperature": "Temperature (°C)",
+    "humidity": "Humidity (%)"
+  }
+}

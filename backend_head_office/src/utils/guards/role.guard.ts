@@ -14,7 +14,7 @@ export class RoleGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
         const user: JwtPayload = request.user;
 
-        if (!user) return false;
+        if (!user || !user.role_label) return false;
 
         const requiredRoles = this.reflector.getAllAndOverride<string[]>(
             'roles',
@@ -23,7 +23,8 @@ export class RoleGuard implements CanActivate {
 
         if (!requiredRoles || requiredRoles.length === 0) return true;
 
-        return requiredRoles.includes(user.role_label);
+        const userRole = user.role_label.toUpperCase();
+        return requiredRoles.some(role => role.toUpperCase() === userRole);
     }
 }
 
