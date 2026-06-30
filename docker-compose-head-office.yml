@@ -14,6 +14,21 @@ services:
       - bdd_head_office
     networks:
       - monitoring
+  
+  frontend_head_office:
+    container_name: frontend_futurekawa_head_office
+    restart: unless-stopped
+    build:
+      context: ./frontend/app_head_office
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend_head_office
+    networks:
+      - monitoring
 
   bdd_head_office:
     container_name: bdd_futurekawa_head_office

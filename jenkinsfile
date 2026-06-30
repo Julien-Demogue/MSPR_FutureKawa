@@ -22,6 +22,7 @@ pipeline {
                 echo 'Installation des dépendances...'
                 sh 'cd ./backend_country && npm install'
                 sh 'cd ./backend_head_office && npm install'
+                sh 'cd ./frontend/app_head_office && npm install'
             }
         }
 
@@ -30,8 +31,10 @@ pipeline {
                 echo 'Compilation du projet TypeScript...'
                 sh 'cd ./backend_country && npm run build'
                 sh 'cd ./backend_head_office && npm run build'
+                sh 'cd ./frontend/app_head_office && npm run build'
                 sh 'tar -czvf backend_country.tar.gz -C ./backend_country dist'
                 sh 'tar -czvf backend_head_office.tar.gz -C ./backend_head_office dist'
+                sh 'tar -czvf frontend.tar.gz -C ./frontend/app_head_office dist'
             }
         }
 
@@ -55,6 +58,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                         sh "cd ./backend_country && ${SCANNER_HOME}/bin/sonar-scanner"
                         sh "cd ./backend_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
+                        sh "cd ./frontend/app_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
                 }
             }
         }
@@ -64,6 +68,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'nexus-credentials-id', passwordVariable: 'NEXUS_PWD', usernameVariable: 'NEXUS_USR')]){
                 sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./backend_head_office.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_head_office/backend_head_office.tar.gz"'
                 sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./backend_country.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_country/backend_country.tar.gz"'
+                sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./frontend.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/frontend/frontend.tar.gz"'
             }}
         }
     }
