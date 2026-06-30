@@ -14,3 +14,7 @@ For the first time using this API, you need to follow these steps :
 - `npm run start` : Starts the production server.
 - `npm run start:dev` : Starts the development server with hot-reload
 - `npm run test` : Runs the unit and integration tests.
+
+### Documentation
+A documentation of the backend is provided with Swagger. 
+Use the endpoint `/doc` to see it.

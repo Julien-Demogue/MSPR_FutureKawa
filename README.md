@@ -17,9 +17,9 @@
 ## Build the application with docker 
 
 Run the following commands:
-- `docker compose -f docker-compose.yml up -d`
-- `docker compose -f docker-compose-head-office.yml up -d`
-- `docker compose -f docker-compose-monitoring.yml up -d` <-- run others compose files
+- `docker compose -f docker-compose.yml up -d` : Build docker for the country
+- `docker compose -f docker-compose-head-office.yml up -d` : Build docker for head office
+- `docker compose -f docker-compose-monitoring.yml up -d` Build docker for every services
 
 
 ## Information about APIs
