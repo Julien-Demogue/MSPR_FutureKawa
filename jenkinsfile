@@ -1,0 +1,115 @@
+pipeline {
+    agent any
+
+    tools {
+        // Assurez-vous que 'nodejs' est configuré dans Gérer Jenkins -> Configuration globale des outils
+        nodejs 'node'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'SonarScanner'
+        }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installation des dépendances...'
+                sh 'cd ./backend_country && npm install'
+                sh 'cd ./backend_head_office && npm install'
+                sh 'cd ./frontend/app_head_office && npm install'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Compilation du projet TypeScript...'
+                sh 'cd ./backend_country && npm run build'
+                sh 'cd ./backend_head_office && npm run build'
+                sh 'cd ./frontend/app_head_office && npm run build'
+                sh 'tar -czvf backend_country.tar.gz -C ./backend_country dist'
+                sh 'tar -czvf backend_head_office.tar.gz -C ./backend_head_office dist'
+                sh 'tar -czvf frontend.tar.gz -C ./frontend/app_head_office dist'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                echo 'Exécution des tests unitaires...'
+                sh 'cd ./backend_country && npm run test'
+                sh 'cd ./backend_head_office && npm run test'
+            }
+            post {
+                always {
+                    junit '**/backend_country/junit.xml'
+                    junit '**/backend_head_office/junit.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis country') {
+            steps {
+                echo 'Analyse SonarQube...'
+                withSonarQubeEnv('SonarQube') {
+                        sh "cd ./backend_country && ${SCANNER_HOME}/bin/sonar-scanner"
+                        sh "cd ./backend_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
+                        sh "cd ./frontend/app_head_office && ${SCANNER_HOME}/bin/sonar-scanner"
+                }
+            }
+        }
+        stage('Deploy'){
+            steps {
+                echo 'Déploiement...'
+                withCredentials([usernamePassword(credentialsId: 'nexus-credentials-id', passwordVariable: 'NEXUS_PWD', usernameVariable: 'NEXUS_USR')]){
+                sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./backend_head_office.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_head_office/backend_head_office.tar.gz"'
+                sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./backend_country.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/backend_country/backend_country.tar.gz"'
+                sh 'curl -v -u "${NEXUS_USR}:${NEXUS_PWD}" --upload-file ./frontend.tar.gz "https://nexus.service-eric.duckdns.org/repository/mspr_futurKawa/frontend/frontend.tar.gz"'
+            }}
+        }
+    }
+
+    post {
+        success {
+            script {
+                def message = "✅ **Build Réussi !**\n**Projet :** ${env.JOB_NAME}\n**Build :** #${env.BUILD_NUMBER}\n**Lien :** ${env.BUILD_URL}"
+                sendDiscordNotification(message, "65280") // Vert
+            }
+        }
+        failure {
+            script {
+                def message = "❌ **Build Échoué...**\n**Projet :** ${env.JOB_NAME}\n**Build :** #${env.BUILD_NUMBER}\n**Lien :** ${env.BUILD_URL}"
+                sendDiscordNotification(message, "16711680") // Rouge
+            }
+        }
+    }
+}
+
+def sendDiscordNotification(String message, String color) {
+    def discordWebhookUrl = "https://discord.com/api/webhooks/1501545327461662790/5-S_ltbIfaIsBmyE9FEoJ9aJENq0uiI5daXug8izxCsMJL3O5r6jgUZPPu_fck2ftQ7q"
+    
+    // 1. On prépare l'objet JSON proprement
+    // On remplace les vrais retours à la ligne par le texte "\n" pour le JSON
+    def cleanMessage = message.replace("\n", "\\n").replace("\"", "\\\"")
+
+    def payload = """{
+        "embeds": [{
+            "title": "Statut Pipeline",
+            "description": "${cleanMessage}",
+            "color": ${color}
+        }]
+    }"""
+
+    // 2. On écrit le payload dans un fichier temporaire
+    writeFile file: 'discord_payload.json', text: payload
+
+    // 3. On envoie le fichier avec @
+    sh "curl -H 'Content-Type: application/json' -X POST -d @discord_payload.json ${discordWebhookUrl}"
+    
+    // 4. Nettoyage
+    sh "rm discord_payload.json"
+}

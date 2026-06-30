@@ -1,0 +1,78 @@
+services:
+  # frontend:
+  backend_head_office:
+    container_name: backend_futurekawa_head_office
+    restart: unless-stopped
+    build:
+      context: ./backend_head_office
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm run start"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - bdd_head_office
+    networks:
+      - monitoring
+  
+  frontend_head_office:
+    container_name: frontend_futurekawa_head_office
+    restart: unless-stopped
+    build:
+      context: ./frontend/app_head_office
+      dockerfile: Dockerfile
+    command: >
+      sh -c "npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend_head_office
+    networks:
+      - monitoring
+
+  bdd_head_office:
+    container_name: bdd_futurekawa_head_office
+    restart: unless-stopped
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: FutureKawa
+      TZ: "Europe/Paris"
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./bdd_head_office.sql:/docker-entrypoint-initdb.d/bdd_head_office.sql
+    networks:
+      - monitoring
+
+  phpmyadmin_head_office:
+    container_name: phpmyadmin_futurekawa_head_office
+    restart: unless-stopped
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: bdd_head_office
+      PMA_USER: root
+      PMA_PASSWORD: root
+      TZ: "Europe/Paris"
+    ports:
+      - "8081:80"
+    depends_on:
+      - bdd_head_office
+    networks:
+      - monitoring
+
+  mysql_exporter_head_office:
+    image: prom/mysqld-exporter:v0.14.0
+    container_name: FuturKawa_mysql_exporter_head_office
+    restart: unless-stopped
+    ports:
+      - "9105:9104"
+    environment:
+      - "DATA_SOURCE_NAME=exporter:exporterpassword@tcp(bdd_head_office:3306)/"
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    name: monitoring
+    external: true

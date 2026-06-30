@@ -1,0 +1,23 @@
+import { DefaultEntity } from '../utils/entities/default.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Warehouse } from "../warehouses/warehouse.entity";
+import { Alert } from "../alerts/alert.entity";
+
+@Entity('statements')
+export class Statement extends DefaultEntity {
+    @Column({ type: 'decimal', precision: 5, scale: 2 })
+    value!: number;
+
+    @Column({ type: 'enum', enum: ['TEMPERATURE', 'HUMIDITY'] })
+    type!: string;
+
+    @Column({ name: 'id_warehouse' })
+    id_warehouse!: number;
+
+    @ManyToOne(() => Warehouse)
+    @JoinColumn({ name: 'id_warehouse' })
+    warehouse!: Warehouse;
+
+    @OneToMany(() => Alert, alert => alert.statement)
+    alerts!: Alert[];
+}
