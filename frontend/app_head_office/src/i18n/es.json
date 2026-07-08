@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "FutureKawa",
+    "logout": "Cerrar sesión",
+    "loading": "Cargando el espacio FutureKawa...",
+    "unknownRole": "Rol desconocido: contacte a un administrador.",
+    "you": "Usted",
+    "user": "Usuario",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "selectPlaceholder": "Seleccionar...",
+    "historyRange": {
+      "label": "Período",
+      "1d": "Últimas 24 horas",
+      "7d": "Últimos 7 días",
+      "60d": "Últimos 60 días"
+    }
+  },
+  "nav": {
+    "overview": "Resumen",
+    "stocks": "Existencias",
+    "history": "Historial",
+    "alerts": "Alertas",
+    "users": "Usuarios"
+  },
+  "roles": {
+    "ADMIN": "Administrador",
+    "DIRECTION": "Dirección",
+    "BRAZIL": "Brasil",
+    "ECUADOR": "Ecuador",
+    "COLOMBIA": "Colombia"
+  },
+  "status": {
+    "normal": "Normal",
+    "alert": "Alerta"
+  },
+  "alertReasons": {
+    "outOfTolerance": "Condiciones fuera de tolerancia (temperatura/humedad)",
+    "tooOld": "Almacenado durante más de {{days}} días"
+  },
+  "login": {
+    "title": "FutureKawa",
+    "subtitle": "Portal de administración y supervisión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Iniciar sesión",
+    "submitting": "Iniciando sesión...",
+    "error": "Correo electrónico o contraseña incorrectos."
+  },
+  "admin": {
+    "title": "Gestión de usuarios",
+    "teamTitle": "Equipo FutureKawa",
+    "teamSubtitle": "Administre los accesos y roles de sus colaboradores.",
+    "newUser": "+ Nuevo usuario",
+    "loadError": "No se pueden cargar los usuarios.",
+    "loadingUsers": "Cargando colaboradores...",
+    "colName": "Nombre completo",
+    "colEmail": "Correo electrónico",
+    "colRole": "Rol",
+    "colActions": "Acciones",
+    "deleteConfirm": "¿Está seguro de que desea eliminar este usuario?",
+    "deleteError": "Error al eliminar el usuario.",
+    "roleUpdateError": "Error al actualizar el rol.",
+    "createError": "Error al crear el usuario.",
+    "roleRequired": "Por favor, seleccione un rol.",
+    "unknownRoleSuffix": "(desconocido)",
+    "modalTitle": "Agregar un usuario",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "tempPassword": "Contraseña provisional",
+    "initialRole": "Rol inicial",
+    "createAccount": "Crear cuenta",
+    "creating": "Creando..."
+  },
+  "overview": {
+    "title": "Gestión de existencias",
+    "titleWithCountry": "Gestión de existencias — {{country}}",
+    "country": "País",
+    "warehouse": "Almacén",
+    "allCountries": "Todos los países",
+    "allCountriesLabel": "Todos los países",
+    "allWarehouses": "Todos los almacenes",
+    "lotCount_one": "{{count}} lote",
+    "lotCount_other": "{{count}} lotes",
+    "noLots": "No hay lotes para esta selección.",
+    "selectLotPrompt": "Seleccione un lote para ver los detalles.",
+    "temperature": "Temperatura",
+    "humidity": "Humedad",
+    "weight": "Peso",
+    "storedOn": "Almacenado el",
+    "temperatureChart": "Temperatura (°C)",
+    "humidityChart": "Humedad (%)",
+    "criticalBanner_one": "{{count}} lote en alerta —",
+    "criticalBanner_other": "{{count}} lotes en alerta —"
+  },
+  "stocksPage": {
+    "title": "Existencias",
+    "allLots": "Todos los lotes",
+    "lotCount_one": "{{count}} lote",
+    "lotCount_other": "{{count}} lotes",
+    "sortByDate": "Ordenar por fecha (FIFO)",
+    "sortByStatus": "Ordenar por estado",
+    "sortById": "Ordenar por ID",
+    "colId": "ID Lote",
+    "colCountry": "País",
+    "colWarehouse": "Almacén",
+    "colVariety": "Variedad",
+    "colDate": "Fecha almacenaje",
+    "colStatus": "Estado",
+    "colWeight": "Cantidad (kg)"
+  },
+  "alertsPage": {
+    "title": "Alertas",
+    "activeCount_one": "{{count}} lote en alerta actualmente.",
+    "activeCount_other": "{{count}} lotes en alerta actualmente.",
+    "noAlerts": "No hay alertas activas en este momento. ✅",
+    "storedOn": "Almacenado el"
+  },
+  "historyPage": {
+    "title": "Historial",
+    "lotLabel": "Lote",
+    "noLots": "No hay lotes disponibles.",
+    "storedOn": "Almacenado el",
+    "temperature": "Temperatura (°C)",
+    "humidity": "Humedad (%)"
+  }
+}
