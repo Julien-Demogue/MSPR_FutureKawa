@@ -1,0 +1,128 @@
+{
+  "common": {
+    "appName": "FutureKawa",
+    "logout": "Sair",
+    "loading": "Carregando o espaço FutureKawa...",
+    "unknownRole": "Função desconhecida: entre em contato com um administrador.",
+    "you": "Você",
+    "user": "Usuário",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "selectPlaceholder": "Selecionar...",
+    "historyRange": {
+      "label": "Período",
+      "1d": "Últimas 24 horas",
+      "7d": "Últimos 7 dias",
+      "60d": "Últimos 60 dias"
+    }
+  },
+  "nav": {
+    "overview": "Visão geral",
+    "stocks": "Estoques",
+    "history": "Histórico",
+    "alerts": "Alertas",
+    "users": "Usuários"
+  },
+  "roles": {
+    "ADMIN": "Administrador",
+    "DIRECTION": "Direção",
+    "BRAZIL": "Brasil",
+    "ECUADOR": "Equador",
+    "COLOMBIA": "Colômbia"
+  },
+  "status": {
+    "normal": "Normal",
+    "alert": "Alerta"
+  },
+  "alertReasons": {
+    "outOfTolerance": "Condições fora da tolerância (temperatura/umidade)",
+    "tooOld": "Armazenado há mais de {{days}} dias"
+  },
+  "login": {
+    "title": "FutureKawa",
+    "subtitle": "Portal de administração e supervisão",
+    "email": "Endereço de e-mail",
+    "password": "Senha",
+    "submit": "Entrar",
+    "submitting": "Entrando...",
+    "error": "E-mail ou senha incorretos."
+  },
+  "admin": {
+    "title": "Gestão de usuários",
+    "teamTitle": "Equipe FutureKawa",
+    "teamSubtitle": "Gerencie os acessos e as funções de seus colaboradores.",
+    "newUser": "+ Novo usuário",
+    "loadError": "Não foi possível carregar os usuários.",
+    "loadingUsers": "Carregando colaboradores...",
+    "colName": "Nome completo",
+    "colEmail": "E-mail",
+    "colRole": "Função",
+    "colActions": "Ações",
+    "deleteConfirm": "Tem certeza de que deseja excluir este usuário?",
+    "deleteError": "Erro ao excluir o usuário.",
+    "roleUpdateError": "Erro ao atualizar a função.",
+    "createError": "Erro ao criar o usuário.",
+    "roleRequired": "Por favor, selecione uma função.",
+    "unknownRoleSuffix": "(desconhecido)",
+    "modalTitle": "Adicionar um usuário",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "email": "E-mail",
+    "tempPassword": "Senha provisória",
+    "initialRole": "Função inicial",
+    "createAccount": "Criar conta",
+    "creating": "Criando..."
+  },
+  "overview": {
+    "title": "Gestão de estoques",
+    "titleWithCountry": "Gestão de estoques — {{country}}",
+    "country": "País",
+    "warehouse": "Armazém",
+    "allCountries": "Todos os países",
+    "allCountriesLabel": "Todos os países",
+    "allWarehouses": "Todos os armazéns",
+    "lotCount_one": "{{count}} lote",
+    "lotCount_other": "{{count}} lotes",
+    "noLots": "Nenhum lote para esta seleção.",
+    "selectLotPrompt": "Selecione um lote para ver os detalhes.",
+    "temperature": "Temperatura",
+    "humidity": "Umidade",
+    "weight": "Peso",
+    "storedOn": "Armazenado em",
+    "temperatureChart": "Temperatura (°C)",
+    "humidityChart": "Umidade (%)",
+    "criticalBanner_one": "{{count}} lote em alerta —",
+    "criticalBanner_other": "{{count}} lotes em alerta —"
+  },
+  "stocksPage": {
+    "title": "Estoques",
+    "allLots": "Todos os lotes",
+    "lotCount_one": "{{count}} lote",
+    "lotCount_other": "{{count}} lotes",
+    "sortByDate": "Ordenar por data (FIFO)",
+    "sortByStatus": "Ordenar por status",
+    "sortById": "Ordenar por ID",
+    "colId": "ID Lote",
+    "colCountry": "País",
+    "colWarehouse": "Armazém",
+    "colVariety": "Variedade",
+    "colDate": "Data de armazenagem",
+    "colStatus": "Status",
+    "colWeight": "Quantidade (kg)"
+  },
+  "alertsPage": {
+    "title": "Alertas",
+    "activeCount_one": "{{count}} lote em alerta atualmente.",
+    "activeCount_other": "{{count}} lotes em alerta atualmente.",
+    "noAlerts": "Nenhum alerta ativo no momento. ✅",
+    "storedOn": "Armazenado em"
+  },
+  "historyPage": {
+    "title": "Histórico",
+    "lotLabel": "Lote",
+    "noLots": "Nenhum lote disponível.",
+    "storedOn": "Armazenado em",
+    "temperature": "Temperatura (°C)",
+    "humidity": "Umidade (%)"
+  }
+}
