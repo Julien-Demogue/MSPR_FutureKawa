@@ -1,13 +1,13 @@
 import { Controller, Delete, Get, Param, Patch, Post, Req, Res } from '@nestjs/common';
 import axios from 'axios';
 import { Guard } from '../utils/decorators/guard.decorator';
-import { AppRole, ALL_ROLES } from '../utils/constants/roles.constant';
+import { AppRole } from '../utils/constants/roles.constant';
 import { batch_url, getDefaultHeaders } from '../utils/constants/backend-country.constants';
 
 // BATCHES
 @Controller("backend_country/batches")
 export class BackendCountryBatchesController {
-    @Guard(...ALL_ROLES)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get()
     async getBatches(@Res() res) {
         const url = `${batch_url}`;
@@ -21,7 +21,7 @@ export class BackendCountryBatchesController {
         const response = await axios.post(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(...ALL_ROLES)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('uuid')
     async getBatchByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -29,7 +29,7 @@ export class BackendCountryBatchesController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(...ALL_ROLES)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('id')
     async getBatchById(@Req() req, @Res() res) {
         const id = req.query.id;
