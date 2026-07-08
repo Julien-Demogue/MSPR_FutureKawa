@@ -3,6 +3,8 @@
     "appName": "FutureKawa",
     "logout": "Log out",
     "loading": "Loading FutureKawa workspace...",
+    "loadingData": "Loading data...",
+    "loadError": "Unable to load data.",
     "unknownRole": "Unknown role: please contact an administrator.",
     "you": "You",
     "user": "User",
@@ -31,12 +33,11 @@
     "COLOMBIA": "Colombia"
   },
   "status": {
-    "normal": "Normal",
-    "alert": "Alert"
-  },
-  "alertReasons": {
-    "outOfTolerance": "Conditions out of tolerance (temperature/humidity)",
-    "tooOld": "Stored for over {{days}} days"
+    "OK": "Normal",
+    "ALERT": "Alert",
+    "EXPIRED": "Expired",
+    "SENT": "Shipped",
+    "DESTROYED": "Destroyed"
   },
   "login": {
     "title": "FutureKawa",
@@ -87,7 +88,6 @@
     "selectLotPrompt": "Select a lot to see details.",
     "temperature": "Temperature",
     "humidity": "Humidity",
-    "weight": "Weight",
     "storedOn": "Stored on",
     "temperatureChart": "Temperature (°C)",
     "humidityChart": "Humidity (%)",
@@ -105,10 +105,8 @@
     "colId": "Lot ID",
     "colCountry": "Country",
     "colWarehouse": "Warehouse",
-    "colVariety": "Variety",
     "colDate": "Storage date",
-    "colStatus": "Status",
-    "colWeight": "Quantity (kg)"
+    "colStatus": "Status"
   },
   "alertsPage": {
     "title": "Alerts",

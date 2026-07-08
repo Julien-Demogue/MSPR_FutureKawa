@@ -3,6 +3,8 @@
     "appName": "FutureKawa",
     "logout": "Sair",
     "loading": "Carregando o espaço FutureKawa...",
+    "loadingData": "Carregando dados...",
+    "loadError": "Não foi possível carregar os dados.",
     "unknownRole": "Função desconhecida: entre em contato com um administrador.",
     "you": "Você",
     "user": "Usuário",
@@ -31,12 +33,11 @@
     "COLOMBIA": "Colômbia"
   },
   "status": {
-    "normal": "Normal",
-    "alert": "Alerta"
-  },
-  "alertReasons": {
-    "outOfTolerance": "Condições fora da tolerância (temperatura/umidade)",
-    "tooOld": "Armazenado há mais de {{days}} dias"
+    "OK": "Normal",
+    "ALERT": "Alerta",
+    "EXPIRED": "Expirado",
+    "SENT": "Enviado",
+    "DESTROYED": "Destruído"
   },
   "login": {
     "title": "FutureKawa",
@@ -87,7 +88,6 @@
     "selectLotPrompt": "Selecione um lote para ver os detalhes.",
     "temperature": "Temperatura",
     "humidity": "Umidade",
-    "weight": "Peso",
     "storedOn": "Armazenado em",
     "temperatureChart": "Temperatura (°C)",
     "humidityChart": "Umidade (%)",
@@ -105,10 +105,8 @@
     "colId": "ID Lote",
     "colCountry": "País",
     "colWarehouse": "Armazém",
-    "colVariety": "Variedade",
     "colDate": "Data de armazenagem",
-    "colStatus": "Status",
-    "colWeight": "Quantidade (kg)"
+    "colStatus": "Status"
   },
   "alertsPage": {
     "title": "Alertas",

@@ -20,10 +20,14 @@ test.describe('E2E-04 — Isolation par pays (BRAZIL)', () => {
   });
 
   test('E2E-04-B : lots affichés uniquement brésiliens', async ({ page }) => {
-    const lotIds = await page.locator('h3').allTextContents();
-    const lotCodes = lotIds.filter(id => /^[A-Z]{2,3}-/.test(id));
-    expect(lotCodes.length).toBeGreaterThan(0);
-    expect(lotCodes.every(id => id.startsWith('BRA'))).toBeTruthy();
+    // Chaque carte de lot porte un attribut data-country-role reflétant le pays réel du lot (API).
+    const lotCards = page.locator('[data-country-role]');
+    await expect(lotCards.first()).toBeVisible();
+    const count = await lotCards.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      await expect(lotCards.nth(i)).toHaveAttribute('data-country-role', 'BRAZIL');
+    }
   });
 
   test('E2E-04-C : bannière d\'alertes cantonnée au Brésil', async ({ page }) => {

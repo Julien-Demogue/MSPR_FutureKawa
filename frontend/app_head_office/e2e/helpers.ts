@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test';
 
 export const TEST_USERS = {
-  admin:     { email: 'admin@futurekawa.test',     password: 'Test1234!', role: 'ADMIN' },
+  admin:     { email: 'admin@futurekawa.test',     password: 'Admin1234!', role: 'ADMIN' },
   direction: { email: 'direction@futurekawa.test', password: 'Test1234!', role: 'DIRECTION' },
   brazil:    { email: 'brazil@futurekawa.test',    password: 'Test1234!', role: 'BRAZIL' },
 } as const;
