@@ -9,7 +9,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'http://host.docker.internal:3001';
 
 // ─── À MODIFIER avec vos credentials admin réels ───────────────────────────
 const EXISTING_ADMIN_EMAIL    = 'admintest3@email.com';
