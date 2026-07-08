@@ -10,7 +10,7 @@ import { ApiFindOneResponse } from '../utils/decorators/api-find-one-responses.d
 import { ApiUpdateResponses } from '../utils/decorators/api-update-responses.decorator';
 import { ApiDeleteResponses } from '../utils/decorators/api-delete-responses.decorator';
 import { User } from './user.entity';
-import { AppRole } from '../utils/constants/roles.constant';
+import { AppRole, ALL_ROLES } from '../utils/constants/roles.constant';
 import { JwtPayload } from '../utils/dto/jwt.dto';
 import type { Request as ExpressRequest } from 'express';
 import { Guard } from '../utils/decorators/guard.decorator';
@@ -39,7 +39,7 @@ export class UsersController {
         return await this.usersService.findAll();
     }
 
-    @Guard(AppRole.ADMIN, AppRole.DIRECTION, AppRole.BRAZIL, AppRole.ECUADOR, AppRole.COLOMBIA, AppRole.USER)
+    @Guard(...ALL_ROLES)
     @Get("/me")
     @ApiOperation({ summary: "Retrieve user by his UUID" })
     @ApiFindOneResponse(User)
