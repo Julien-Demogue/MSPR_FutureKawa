@@ -51,6 +51,16 @@ pipeline {
                 }
             }
         }
+        stage("e2e tests") {
+            steps {
+                echo 'Exécution des tests e2e...'
+                sh 'docker compose up -d'
+                sh 'docker compose -f docker-compose-head-office.yml up -d'
+                sh 'cd ./frontend/app_head_office && npx playwright test'
+                sh 'docker compose down'
+                sh 'docker compose -f docker-compose-head-office.yml down'
+            }
+        }
 
         stage('SonarQube Analysis country') {
             steps {
