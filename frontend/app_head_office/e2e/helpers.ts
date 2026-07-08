@@ -1,9 +1,15 @@
 import { Page } from '@playwright/test';
 
 export const TEST_USERS = {
+<<<<<<< HEAD
   admin: { email: 'admin@futurekawa.test', password: 'Admin1234!', role: 'ADMIN' },
   direction: { email: 'direction@futurekawa.test', password: 'Test1234!', role: 'DIRECTION' },
   brazil: { email: 'brazil@futurekawa.test', password: 'Test1234!', role: 'BRAZIL' },
+=======
+  admin:     { email: 'admin@futurekawa.test',     password: 'Admin1234!', role: 'ADMIN' },
+  direction: { email: 'direction@futurekawa.test', password: 'Test1234!', role: 'DIRECTION' },
+  brazil:    { email: 'brazil@futurekawa.test',    password: 'Test1234!', role: 'BRAZIL' },
+>>>>>>> parent of a94d434 (Revert accidental merge to main)
 } as const;
 
 /** Se connecte et attend la redirection vers le dashboard */
