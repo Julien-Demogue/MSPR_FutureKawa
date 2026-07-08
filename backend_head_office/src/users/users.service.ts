@@ -114,10 +114,6 @@ export class UsersService {
             throw new BadRequestException(ApiResponseMessages.invalidField('last_name'));
         }
 
-        // Résoudre role_label → id_role avant toute validation de l'uuid
-        // role_label n'est pas une colonne TypeORM : il faut le traduire en id_role
-        // puis le retirer du payload pour éviter l'erreur "Property not found in User"
-        let resolvedIdRole: number | undefined;
         if (updateUserDto.role_label !== undefined) {
             if (isNullOrEmpty(updateUserDto.role_label)) {
                 throw new BadRequestException(ApiResponseMessages.invalidField('role_label'));
@@ -127,8 +123,6 @@ export class UsersService {
             if (!role) {
                 throw new BadRequestException(ApiResponseMessages.notFound(Role));
             }
-
-            resolvedIdRole = role.id;
         }
 
         await this.findOneByUuid(uuid);
@@ -144,14 +138,7 @@ export class UsersService {
             if (updateUserDto.password) {
                 updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
             }
-
-            // Construire le payload sans role_label (pas une colonne) mais avec id_role si résolu
-            const { role_label, ...updatePayload } = updateUserDto as any;
-            if (resolvedIdRole !== undefined) {
-                updatePayload.id_role = resolvedIdRole;
-            }
-
-            await this.repo.update({ uuid }, updatePayload);
+            await this.repo.update({ uuid }, updateUserDto);
             return await this.findOneByUuid(uuid);
         } catch (error) {
             throw new InternalServerErrorException(ApiResponseMessages.internalServerError(User, error));

@@ -1,12 +1,12 @@
 import { Controller, Delete, Get, Param, Patch, Post, Req, Res } from '@nestjs/common';
 import axios from 'axios';
 import { Guard } from '../utils/decorators/guard.decorator';
-import { AppRole, ALL_ROLES } from '../utils/constants/roles.constant';
+import { AppRole } from '../utils/constants/roles.constant';
 import { warehouse_url, getDefaultHeaders } from '../utils/constants/backend-country.constants';
 
 @Controller("backend_country/warehouses")
 export class BackendCountryWarehousesController {
-    @Guard(...ALL_ROLES)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get()
     async getWarehouses(@Res() res) {
         const url = `${warehouse_url}`;
@@ -20,7 +20,7 @@ export class BackendCountryWarehousesController {
         const response = await axios.post(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(...ALL_ROLES)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('uuid')
     async getWarehouseByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -28,7 +28,7 @@ export class BackendCountryWarehousesController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(...ALL_ROLES)
+    @Guard(AppRole.USER, AppRole.ADMIN)
     @Get('id')
     async getWarehouseById(@Req() req, @Res() res) {
         const id = req.query.id;
