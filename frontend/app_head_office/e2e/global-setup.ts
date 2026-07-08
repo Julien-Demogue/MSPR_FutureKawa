@@ -9,7 +9,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'http://172.17.0.1:3001'
 
 // ─── À MODIFIER avec vos credentials admin réels ───────────────────────────
 const EXISTING_ADMIN_EMAIL    = 'admintest3@email.com';
