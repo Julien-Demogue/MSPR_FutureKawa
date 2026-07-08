@@ -21,9 +21,12 @@ CREATE TABLE roles (
 
 INSERT INTO
     roles (uuid, label)
-VALUES (UUID(), 'SUPERADMIN'),
-    (UUID(), 'ADMIN'),
-    (UUID(), 'USER');
+VALUES (UUID(), 'ADMIN'),
+    (UUID(), 'USER'),
+    (UUID(), 'DIRECTION'),
+    (UUID(), 'BRAZIL'),
+    (UUID(), 'ECUADOR'),
+    (UUID(), 'COLOMBIA');
 
 -- ======================
 -- TABLE users

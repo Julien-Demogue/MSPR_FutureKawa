@@ -3,15 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { User } from '../types/user.types';
 import { parseAppRole } from '../constants/roles.constant';
 import { STOCKS_NAV_ITEMS } from '../constants/nav.constant';
-import { visibleCountriesFor, flattenLots, parseStoredDate } from '../data/stocks.data';
+import { visibleLotsFor, formatStoredDate } from '../api/stocks.api';
+import { useStockOverview } from '../hooks/useStockOverview';
 import MainLayout from '../components/MainLayout';
+import StatusBadge from '../components/StatusBadge';
 
 type SortKey = 'date' | 'status' | 'id';
 
 export default function StocksPage({ user }: { user: User }) {
   const { t } = useTranslation();
   const role = parseAppRole(user.role?.label);
-  const lots = useMemo(() => flattenLots(visibleCountriesFor(role)), [role]);
+  const { lots: allLots, loading, error } = useStockOverview();
+  const lots = useMemo(() => visibleLotsFor(role, allLots), [role, allLots]);
   const [sortKey, setSortKey] = useState<SortKey>('date');
 
   const sortedLots = useMemo(() => {
@@ -19,12 +22,12 @@ export default function StocksPage({ user }: { user: User }) {
     copy.sort((a, b) => {
       if (sortKey === 'date') {
         // FIFO : lot le plus ancien en premier (cf. cahier des charges)
-        return parseStoredDate(a.date).getTime() - parseStoredDate(b.date).getTime();
+        return a.storedAt.getTime() - b.storedAt.getTime();
       }
       if (sortKey === 'status') {
-        return (a.status === 'Alert' ? 0 : 1) - (b.status === 'Alert' ? 0 : 1);
+        return (a.status === 'ALERT' ? 0 : 1) - (b.status === 'ALERT' ? 0 : 1);
       }
-      return a.id.localeCompare(b.id);
+      return a.id - b.id;
     });
     return copy;
   }, [lots, sortKey]);
@@ -48,40 +51,38 @@ export default function StocksPage({ user }: { user: User }) {
           </select>
         </div>
 
-        <div className="overflow-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#EBDBC9] text-[#4A3022] text-sm uppercase tracking-wider">
-                <th className="p-3 font-semibold">{t('stocksPage.colId')}</th>
-                <th className="p-3 font-semibold">{t('stocksPage.colCountry')}</th>
-                <th className="p-3 font-semibold">{t('stocksPage.colWarehouse')}</th>
-                <th className="p-3 font-semibold">{t('stocksPage.colVariety')}</th>
-                <th className="p-3 font-semibold">{t('stocksPage.colDate')}</th>
-                <th className="p-3 font-semibold">{t('stocksPage.colStatus')}</th>
-                <th className="p-3 font-semibold text-right">{t('stocksPage.colWeight')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#D8C5B1]">
-              {sortedLots.map((lot) => (
-                <tr key={lot.id} className="hover:bg-[#FDFBF7] transition-colors">
-                  <td className="p-3 font-medium text-[#4A3022]">{lot.id}</td>
-                  <td className="p-3 text-gray-600">{t(`roles.${lot.countryRole}`)}</td>
-                  <td className="p-3 text-gray-600">{lot.warehouseName}</td>
-                  <td className="p-3 text-gray-600">{lot.variety}</td>
-                  <td className="p-3 text-gray-600">{lot.date}</td>
-                  <td className="p-3">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      lot.status === 'Normal' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {lot.status === 'Normal' ? `✓ ${t('status.normal')}` : `⚠️ ${t('status.alert')}`}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right text-gray-600">{lot.weight}</td>
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center text-gray-400">{t('common.loadingData')}</div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center text-red-500">{t('common.loadError')}</div>
+        ) : (
+          <div className="overflow-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#EBDBC9] text-[#4A3022] text-sm uppercase tracking-wider">
+                  <th className="p-3 font-semibold">{t('stocksPage.colId')}</th>
+                  <th className="p-3 font-semibold">{t('stocksPage.colCountry')}</th>
+                  <th className="p-3 font-semibold">{t('stocksPage.colWarehouse')}</th>
+                  <th className="p-3 font-semibold">{t('stocksPage.colDate')}</th>
+                  <th className="p-3 font-semibold">{t('stocksPage.colStatus')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[#D8C5B1]">
+                {sortedLots.map((lot) => (
+                  <tr key={lot.batchId} className="hover:bg-[#FDFBF7] transition-colors" data-country-role={lot.countryRole}>
+                    <td className="p-3 font-medium text-[#4A3022]">{lot.displayId}</td>
+                    <td className="p-3 text-gray-600">{lot.countryRole ? t(`roles.${lot.countryRole}`) : lot.countryName}</td>
+                    <td className="p-3 text-gray-600">{lot.warehouseName}</td>
+                    <td className="p-3 text-gray-600">{formatStoredDate(lot.storedAt)}</td>
+                    <td className="p-3">
+                      <StatusBadge status={lot.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </MainLayout>
   );
