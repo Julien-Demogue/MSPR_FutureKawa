@@ -68,12 +68,14 @@ export class StatementsService {
         if (isOutOfRange) {
             const lastEmailTime = this.lastEmailSentTimes.get(cacheKey) || 0;
             if ((now - lastEmailTime) >= emailCooldown) {
-                await sendEmail('support.futurekawa@gmail.com', subject, `<p>${message}</p>`);
                 this.lastEmailSentTimes.set(cacheKey, now);
+                await sendEmail('support.futurekawa@gmail.com', subject, `<p>${message}</p>`);
             }
 
             const lastAlertTime = this.lastAlertCreatedTimes.get(cacheKey) || 0;
             if ((now - lastAlertTime) >= alertCooldown) {
+                this.lastAlertCreatedTimes.set(cacheKey, now);
+
                 for (const batch of warehouse.batches) {
                     const latestStatus = batch.statuses?.length
                         ? [...batch.statuses].sort((a, b) => b.id - a.id)[0]
@@ -88,13 +90,10 @@ export class StatementsService {
                         });
                     }
                 }
-                this.lastAlertCreatedTimes.set(cacheKey, now);
             }
         } else {
             // Reset the state for this metric type
             this.currentMetricStates.delete(cacheKey);
-            this.lastEmailSentTimes.delete(cacheKey);
-            this.lastAlertCreatedTimes.delete(cacheKey);
 
             const otherType = statement.type === 'TEMPERATURE' ? 'HUMIDITY' : 'TEMPERATURE';
             const otherCacheKey = `${warehouse.id}-${otherType}`;
