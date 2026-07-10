@@ -54,8 +54,8 @@ pipeline {
         stage("e2e tests") {
             steps {
                 echo 'Exécution des tests e2e...'
-                sh 'cd ./backend_country && echo "DB_HOST=host.docker.internal\nCOUNTRY_API_SECRET=\"12345678\"" > .env'
-                sh 'cd ./backend_head_office && echo "DB_HOST=host.docker.internal\nDB_PORT=3307\nDB_USER=root\nDB_PASSWORD=root\nDB_NAME=FutureKawa\nPORT=3001\nJWT_ACCESS_SECRET=\nJWT_REFRESH_SECRET=\nDEFAULT_ADMIN_EMAIL=admintest3@email.com\nDEFAULT_ADMIN_PASSWORD=admin\nDEFAULT_ADMIN_FIRST_NAME=Admin\nDEFAULT_ADMIN_LAST_NAME=FutureKawa\nDEFAULT_ADMIN_ROLE=admin\nSEED_DEMO_USERS_JSON=\nBASE_URL=http://host.docker.internal:3001\nFRONT_URL=http://host.docker.internal:5173\nJWT_SECRET=your_jwt_secret" > .env'
+                sh 'cd ./backend_country && echo "DB_HOST=host.docker.internal\nCOUNTRY_API_SECRET=\"12345678\"MQTT_BROKER_HOST=host.docker.internal\nEMAIL_ADDRESS=support.futurekawa@gmail.com\nEMAIL_APP_PASSWORD=\"owgv lwqw czwx ayct\"" > .env'
+                sh 'cd ./backend_head_office && echo "DB_HOST=host.docker.internal\nDB_PORT=3307\nDB_USER=root\nDB_PASSWORD=root\nDB_NAME=FutureKawa\nPORT=3001\nJWT_ACCESS_SECRET=\nJWT_REFRESH_SECRET=\nDEFAULT_ADMIN_EMAIL=admintest3@email.com\nDEFAULT_ADMIN_PASSWORD=admin\nDEFAULT_ADMIN_FIRST_NAME=Admin\nDEFAULT_ADMIN_LAST_NAME=FutureKawa\nDEFAULT_ADMIN_ROLE=admin\nSEED_DEMO_USERS_JSON=\nBASE_URL=http://host.docker.internal:3001\nFRONT_URL=http://host.docker.internal:5173\nJWT_SECRET=your_jwt_secret\nCOUNTRY_API_SECRET=\"12345678\"" > .env'
                 sh 'docker compose up -d'
                 sh 'docker compose -f docker-compose-head-office.yml up -d'
                 sh 'cd ./frontend/app_head_office && npx playwright install'
