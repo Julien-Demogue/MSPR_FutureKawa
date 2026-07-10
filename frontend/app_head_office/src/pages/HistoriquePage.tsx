@@ -113,7 +113,14 @@ export default function HistoriquePage({ user }: { user: User }) {
                     <LineChart data={history}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#EBDBC9" />
                       <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#8C6239" interval={Math.ceil(history.length / 10)} />
-                      <YAxis tick={{ fontSize: 12 }} stroke="#8C6239" domain={['auto', 'auto']} />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        stroke="#2563EB"
+                        domain={([min, max]: [number, number]) => [
+                          Math.floor(min * 0.95),
+                          Math.ceil(max * 1.05),
+                        ]}
+                      />
                       <Tooltip />
                       <Line type="monotone" dataKey="humidite" stroke="#2563EB" strokeWidth={2} dot={false} />
                     </LineChart>
