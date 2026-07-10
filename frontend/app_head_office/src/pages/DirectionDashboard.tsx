@@ -19,8 +19,6 @@ type CountryFilter = typeof ALL | AppRole;
 export default function DirectionDashboard({ user }: { user: User }) {
   const { t } = useTranslation();
   const userRole = parseAppRole(user.role?.label);
-  // Un compte pays (BRAZIL/ECUADOR/COLOMBIA) est verrouillé sur son propre pays :
-  // pas de sélecteur de pays, et tout (alertes incluses) reste scopé à ce pays.
   const lockedCountryRole = userRole && COUNTRY_NAME_BY_ROLE[userRole] ? userRole : null;
 
   const { lots: allLots, loading, error } = useStockOverview();
@@ -274,7 +272,7 @@ export default function DirectionDashboard({ user }: { user: User }) {
                           <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#8C6239" />
                           <YAxis tick={{ fontSize: 12 }} stroke="#8C6239" domain={['auto', 'auto']} />
                           <Tooltip />
-                          <Line type="monotone" dataKey="temperature" stroke="#8C6239" strokeWidth={2} dot={false} />
+                          <Line type="monotone" dataKey="temperature" stroke="#8C6239" strokeWidth={2} dot={false} connectNulls />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -285,9 +283,16 @@ export default function DirectionDashboard({ user }: { user: User }) {
                         <LineChart data={history}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#EBDBC9" />
                           <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#8C6239" />
-                          <YAxis tick={{ fontSize: 12 }} stroke="#8C6239" domain={['auto', 'auto']} />
+                          <YAxis
+                            tick={{ fontSize: 12 }}
+                            stroke="#2563EB"
+                            domain={([min, max]: [number, number]) => [
+                              Math.floor(min * 0.95),
+                              Math.ceil(max * 1.05),
+                            ]}
+                          />
                           <Tooltip />
-                          <Line type="monotone" dataKey="humidite" stroke="#2563EB" strokeWidth={2} dot={false} />
+                          <Line type="monotone" dataKey="humidite" stroke="#2563EB" strokeWidth={2} dot={false} connectNulls />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>

@@ -2,19 +2,24 @@ import { headOfficeApi } from './axios.config';
 import { AppRole } from '../constants/roles.constant';
 import { COUNTRY_NAME_BY_ROLE, roleForCountryName } from '../constants/countries.constant';
 import type {
-  Alert, Batch, Country, Farm, Statement, StatementType, Status, StatusValue, Warehouse,
+  Alert, Batch, Country, Farm, Statement, StatementType, Status,
+  StatusValue, Warehouse,
 } from '../types/backend-country.types';
-
 export type { StatusValue } from '../types/backend-country.types';
 
-export type HistoryRange = '1d' | '7d' | '60d';
-export const HISTORY_RANGES: HistoryRange[] = ['1d', '7d', '60d'];
+// ---------------------------------------------------------------------------
+// Périodes disponibles pour les graphiques
+// ---------------------------------------------------------------------------
+export type HistoryRange = '1h' | '6h' | '1d' | '7d' | '60d';
+export const HISTORY_RANGES: HistoryRange[] = ['1h', '6h', '1d', '7d', '60d'];
 export const DEFAULT_HISTORY_RANGE: HistoryRange = '60d';
 
 export interface HistoryPoint {
   date: string;
   temperature: number;
-  humidite: number;
+  // null quand aucune mesure n'existe pour cet instant → connectNulls
+  // interpolera sans descendre à 0
+  humidite: number | null;
 }
 
 export interface ComputedLot {
@@ -33,8 +38,10 @@ export interface ComputedLot {
 }
 
 const RANGE_TO_MS: Record<HistoryRange, number> = {
+  '1h':  1 * 60 * 60 * 1000,
+  '6h':  6 * 60 * 60 * 1000,
   '1d': 24 * 60 * 60 * 1000,
-  '7d': 7 * 24 * 60 * 60 * 1000,
+  '7d':  7 * 24 * 60 * 60 * 1000,
   '60d': 60 * 24 * 60 * 60 * 1000,
 };
 
@@ -44,7 +51,8 @@ export function formatStoredDate(d: Date): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
-/** Assez large pour couvrir la fenêtre "60 jours" tant qu'il n'y a pas de filtre par entrepôt côté API. */
+/** Assez large pour couvrir la fenêtre "60 jours" tant qu'il n'y a pas
+ *  de filtre par entrepôt côté API. */
 const HISTORY_FETCH_COUNT = 2000;
 
 async function getCountries(): Promise<Country[]> {
@@ -84,7 +92,10 @@ async function getStatementsByType(type: StatementType, count = HISTORY_FETCH_CO
   return data;
 }
 
-function latestByKey<T extends { created_at: string }>(items: T[], keyOf: (item: T) => number): Map<number, T> {
+function latestByKey<T extends { created_at: string }>(
+  items: T[],
+  keyOf: (item: T) => number,
+): Map<number, T> {
   const latest = new Map<number, T>();
   for (const item of items) {
     const key = keyOf(item);
@@ -97,18 +108,21 @@ function latestByKey<T extends { created_at: string }>(items: T[], keyOf: (item:
 }
 
 export async function fetchStockOverview(): Promise<ComputedLot[]> {
-  const [countries, farms, warehouses, batches, statuses, alerts, temperatures, humidities] = await Promise.all([
-    getCountries(), getFarms(), getWarehouses(), getBatches(), getStatuses(), getAlerts(),
-    getStatementsByType('TEMPERATURE'), getStatementsByType('HUMIDITY'),
-  ]);
+  const [countries, farms, warehouses, batches, statuses, alerts, temperatures, humidities] =
+    await Promise.all([
+      getCountries(), getFarms(), getWarehouses(), getBatches(),
+      getStatuses(), getAlerts(),
+      getStatementsByType('TEMPERATURE'),
+      getStatementsByType('HUMIDITY'),
+    ]);
 
   const countryById = new Map(countries.map((c) => [c.id, c]));
   const farmById = new Map(farms.map((f) => [f.id, f]));
   const warehouseById = new Map(warehouses.map((w) => [w.id, w]));
-
   const latestStatusByBatch = latestByKey(statuses, (s) => s.id_batch);
   const latestTempByWarehouse = latestByKey(temperatures, (s) => s.id_warehouse);
   const latestHumidityByWarehouse = latestByKey(humidities, (s) => s.id_warehouse);
+
   const alertsByStatus = new Map<number, Alert[]>();
   for (const alert of alerts) {
     const list = alertsByStatus.get(alert.id_status) ?? [];
@@ -131,9 +145,10 @@ export async function fetchStockOverview(): Promise<ComputedLot[]> {
       warehouseId: warehouse?.id ?? -1,
       warehouseName: warehouse?.name ?? '—',
       status: latestStatus?.value ?? null,
-      alertReasons: latestStatus && latestStatus.value === 'ALERT'
-        ? (alertsByStatus.get(latestStatus.id) ?? []).map((a) => a.value)
-        : [],
+      alertReasons:
+        latestStatus && latestStatus.value === 'ALERT'
+          ? (alertsByStatus.get(latestStatus.id) ?? []).map((a) => a.value)
+          : [],
       temp: warehouse ? latestTempByWarehouse.get(warehouse.id)?.value ?? null : null,
       humidity: warehouse ? latestHumidityByWarehouse.get(warehouse.id)?.value ?? null : null,
       storedAt: new Date(batch.created_at),
@@ -146,16 +161,23 @@ export function visibleLotsFor(role: AppRole | undefined, lots: ComputedLot[]): 
   return isCountryRole ? lots.filter((lot) => lot.countryRole === role) : lots;
 }
 
-export async function fetchWarehouseHistory(warehouseId: number, range: HistoryRange): Promise<HistoryPoint[]> {
+export async function fetchWarehouseHistory(
+  warehouseId: number,
+  range: HistoryRange,
+): Promise<HistoryPoint[]> {
   const [temperatures, humidities] = await Promise.all([
     getStatementsByType('TEMPERATURE'),
     getStatementsByType('HUMIDITY'),
   ]);
 
   const since = Date.now() - RANGE_TO_MS[range];
-  const inWindow = (s: Statement) => s.id_warehouse === warehouseId && new Date(s.created_at).getTime() >= since;
+  const inWindow = (s: Statement) =>
+    s.id_warehouse === warehouseId && new Date(s.created_at).getTime() >= since;
 
-  const tempPoints = temperatures.filter(inWindow).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const tempPoints = temperatures
+    .filter(inWindow)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+
   const humidityByTime = new Map(
     humidities.filter(inWindow).map((s) => [s.created_at, s.value]),
   );
@@ -163,12 +185,18 @@ export async function fetchWarehouseHistory(warehouseId: number, range: HistoryR
   const formatDate = (iso: string): string => {
     const d = new Date(iso);
     const pad = (n: number) => n.toString().padStart(2, '0');
-    return range === '1d' ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+    // Granularité horaire pour les 3 périodes intraday
+    return range === '1h' || range === '6h' || range === '1d'
+      ? `${pad(d.getHours())}:${pad(d.getMinutes())}`
+      : `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
   };
 
   return tempPoints.map((s) => ({
     date: formatDate(s.created_at),
     temperature: s.value,
-    humidite: humidityByTime.get(s.created_at) ?? 0,
+    // null au lieu de 0 quand aucune mesure humidité ne correspond à cet instant :
+    // combiné avec connectNulls sur le <Line>, la courbe interpolera proprement
+    // sans jamais descendre à 0.
+    humidite: humidityByTime.get(s.created_at) ?? null,
   }));
 }
