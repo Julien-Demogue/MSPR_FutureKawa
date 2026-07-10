@@ -102,7 +102,7 @@ export default function HistoriquePage({ user }: { user: User }) {
                       <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#8C6239" interval={Math.ceil(history.length / 10)} />
                       <YAxis tick={{ fontSize: 12 }} stroke="#8C6239" domain={['auto', 'auto']} />
                       <Tooltip />
-                      <Line type="monotone" dataKey="temperature" stroke="#8C6239" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="temperature" stroke="#8C6239" strokeWidth={2} dot={false} connectNulls />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -122,7 +122,7 @@ export default function HistoriquePage({ user }: { user: User }) {
                         ]}
                       />
                       <Tooltip />
-                      <Line type="monotone" dataKey="humidite" stroke="#2563EB" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="humidite" stroke="#2563EB" strokeWidth={2} dot={false} connectNulls />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
