@@ -14,6 +14,8 @@ services:
       - bdd_head_office
     networks:
       - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   
   frontend_head_office:
     container_name: frontend_futurekawa_head_office
@@ -29,6 +31,8 @@ services:
       - backend_head_office
     networks:
       - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   bdd_head_office:
     container_name: bdd_futurekawa_head_office

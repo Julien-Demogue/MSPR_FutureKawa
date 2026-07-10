@@ -12,7 +12,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'http://172.22.0.3:3001'
 
 // ─── À synchroniser avec DEFAULT_ADMIN_EMAIL / DEFAULT_ADMIN_PASSWORD dans backend_head_office/.env ───
 const EXISTING_ADMIN_EMAIL = 'admin@futurekawa.test';

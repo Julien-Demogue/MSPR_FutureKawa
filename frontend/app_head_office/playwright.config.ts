@@ -7,7 +7,7 @@ export default defineConfig({
   retries: 1,
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://172.22.0.3:5173',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

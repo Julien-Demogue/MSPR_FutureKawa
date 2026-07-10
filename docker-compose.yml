@@ -13,6 +13,8 @@ services:
       - bdd_country
     networks:
       - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   bdd_country:
     container_name: bdd_futurekawa_country
     restart: unless-stopped
