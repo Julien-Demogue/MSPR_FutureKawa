@@ -78,6 +78,47 @@ describe('BackendCountryStatementsController', () => {
         );
     });
 
+    it('GET /backend_country/statements should forward offset and count query params', async () => {
+        const mockResponseData = [{ id: 1, message: 'High humidity detected' }];
+
+        mockedAxios.get.mockResolvedValueOnce({
+            status: 200,
+            data: mockResponseData,
+        });
+
+        await request(app.getHttpServer())
+            .get('/backend_country/statements')
+            .query({ offset: 10, count: 50 })
+            .expect(200);
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            `${statement_url}?offset=10&count=50`,
+            expect.any(Object)
+        );
+    });
+
+    it('GET /backend_country/statements/type should proxy the type filter and pagination', async () => {
+        const mockResponseData = [{ id: 1, type: 'TEMPERATURE', value: 28.5 }];
+
+        mockedAxios.get.mockResolvedValueOnce({
+            status: 200,
+            data: mockResponseData,
+        });
+
+        await request(app.getHttpServer())
+            .get('/backend_country/statements/type')
+            .query({ type: 'TEMPERATURE', offset: 0, count: 200 })
+            .expect(200)
+            .expect((res) => {
+                expect(res.body).toEqual(mockResponseData);
+            });
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            `${statement_url}type?type=TEMPERATURE&offset=0&count=200`,
+            expect.any(Object)
+        );
+    });
+
     it('GET /backend_country/statements/uuid should pass the uuid query parameter', async () => {
         const targetUuid = '550e8400-e29b-41d4-a716-446655440000';
         const mockResponseData = { uuid: targetUuid, message: 'Specific statement' };

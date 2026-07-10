@@ -1,13 +1,13 @@
 import { Controller, Delete, Get, Param, Patch, Post, Req, Res } from '@nestjs/common';
 import axios from 'axios';
 import { Guard } from '../utils/decorators/guard.decorator';
-import { AppRole } from '../utils/constants/roles.constant';
+import { AppRole, ALL_ROLES } from '../utils/constants/roles.constant';
 import { farm_url, getDefaultHeaders } from '../utils/constants/backend-country.constants';
 
 // FARMS
 @Controller("backend_country/farms")
 export class BackendCountryFarmsController {
-    @Guard(AppRole.USER, AppRole.ADMIN)
+    @Guard(...ALL_ROLES)
     @Get()
     async getFarms(@Res() res) {
         const url = `${farm_url}`;
@@ -21,7 +21,7 @@ export class BackendCountryFarmsController {
         const response = await axios.post(url, req.body, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN)
+    @Guard(...ALL_ROLES)
     @Get('uuid')
     async getFarmByUuid(@Req() req, @Res() res) {
         const uuid = req.query.uuid;
@@ -29,7 +29,7 @@ export class BackendCountryFarmsController {
         const response = await axios.get(url, { headers: getDefaultHeaders() });
         return res.status(response.status).json(response.data);
     }
-    @Guard(AppRole.USER, AppRole.ADMIN)
+    @Guard(...ALL_ROLES)
     @Get('id')
     async getFarmById(@Req() req, @Res() res) {
         const id = req.query.id;

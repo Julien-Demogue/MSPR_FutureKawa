@@ -11,4 +11,6 @@ Set-Location .\backend_head_office
 npm install --silent
 npm run test # Execute units and integration tests for backend_head_office
 
-# TODO : Add frontend tests when they are implemented
+Set-Location .\frontend\app_head_office
+npm install --silent
+npx playwright test
